@@ -70,7 +70,10 @@
 
             <!-- Analysis Tab -->
             <TabItem Header="Analysis">
-                <views:AnalysisTabView DataContext="{Binding AnalysisTab}"/>
+                <!-- THIS IS THE FIX: Wrap the view in a Grid to constrain its width -->
+                <Grid>
+                    <views:AnalysisTabView DataContext="{Binding AnalysisTab}"/>
+                </Grid>
             </TabItem>
 
             <!-- Option Chain Tab -->

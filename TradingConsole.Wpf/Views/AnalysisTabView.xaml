@@ -19,6 +19,7 @@
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
     </UserControl.Resources>
+    <!-- The outer Grid ensures the DataGrid has a constrained width, enabling horizontal scrolling -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -75,6 +76,7 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="200"/>
 
+                <!-- NEWLY ADDED COLUMNS FROM YOUR FILE -->
                 <DataGridTextColumn Header="Context" Binding="{Binding IntradayContext}" Width="120"/>
                 <DataGridTextColumn Header="Trade Signal" Binding="{Binding FinalTradeSignal}" Width="250"/>
                 <DataGridTextColumn Header="Conviction" Binding="{Binding ConvictionScore}" Width="80"/>
@@ -106,6 +108,7 @@
 
                 <DataGridTextColumn Header="Structure (Multi-Day)" Binding="{Binding MarketStructure}" Width="160"/>
 
+                <!-- NEWLY ADDED COLUMNS FROM YOUR FILE -->
                 <DataGridTextColumn Header="Open Type" Binding="{Binding OpenTypeSignal}" Width="180"/>
                 <DataGridTextColumn Header="vs Y-Profile" Binding="{Binding YesterdayProfileSignal}" Width="180"/>
 
@@ -133,6 +136,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
+                <!-- NEWLY ADDED COLUMNS FROM YOUR FILE -->
                 <DataGridTextColumn Header="Anchored VWAP" Binding="{Binding AnchoredVwap, StringFormat=N2}" Width="120"/>
                 <DataGridTextColumn Header="VWAP Band Signal" Binding="{Binding VwapBandSignal}" Width="140"/>
 

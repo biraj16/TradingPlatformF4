@@ -74,6 +74,12 @@
             </DataGrid.GroupStyle>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="200"/>
+
+                <DataGridTextColumn Header="Context" Binding="{Binding IntradayContext}" Width="120"/>
+                <DataGridTextColumn Header="Trade Signal" Binding="{Binding FinalTradeSignal}" Width="250"/>
+                <DataGridTextColumn Header="Conviction" Binding="{Binding ConvictionScore}" Width="80"/>
+                <DataGridTextColumn Header="Narrative" Binding="{Binding MarketNarrative}" Width="300"/>
+
                 <DataGridTemplateColumn Header="Daily Bias" Width="180">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -100,6 +106,9 @@
 
                 <DataGridTextColumn Header="Structure (Multi-Day)" Binding="{Binding MarketStructure}" Width="160"/>
 
+                <DataGridTextColumn Header="Open Type" Binding="{Binding OpenTypeSignal}" Width="180"/>
+                <DataGridTextColumn Header="vs Y-Profile" Binding="{Binding YesterdayProfileSignal}" Width="180"/>
+
                 <DataGridTemplateColumn Header="1m Candle" Width="210">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -123,55 +132,9 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="5m Candle" Width="210">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding CandleSignal5Min}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding CandleSignal5Min, Converter={StaticResource ValueToSignConverter}, ConverterParameter=ContainsBullish}">
-                                                <Setter Property="Foreground" Value="DarkGreen"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding CandleSignal5Min, Converter={StaticResource ValueToSignConverter}, ConverterParameter=ContainsBearish}">
-                                                <Setter Property="Foreground" Value="DarkRed"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding CandleSignal5Min, Converter={StaticResource ValueToSignConverter}, ConverterParameter=ContainsDoji}">
-                                                <Setter Property="Foreground" Value="DarkOrange"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
 
-                <DataGridTemplateColumn Header="Custom Level" Width="130">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding CustomLevelSignal}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding CustomLevelSignal, Converter={StaticResource ValueToSignConverter}, ConverterParameter=ContainsBreakout}">
-                                                <Setter Property="Foreground" Value="DarkGreen"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding CustomLevelSignal, Converter={StaticResource ValueToSignConverter}, ConverterParameter=ContainsBreakdown}">
-                                                <Setter Property="Foreground" Value="DarkRed"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding CustomLevelSignal}" Value="No trade zone">
-                                                <Setter Property="Foreground" Value="OrangeRed"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-
-                <DataGridTextColumn Header="VWAP" Binding="{Binding Vwap, StringFormat=N2}" Width="100"/>
+                <DataGridTextColumn Header="Anchored VWAP" Binding="{Binding AnchoredVwap, StringFormat=N2}" Width="120"/>
+                <DataGridTextColumn Header="VWAP Band Signal" Binding="{Binding VwapBandSignal}" Width="140"/>
 
                 <DataGridTemplateColumn Header="vs VWAP" Width="100">
                     <DataGridTemplateColumn.CellTemplate>
@@ -184,69 +147,6 @@
                                                 <Setter Property="Foreground" Value="Green"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding PriceVsVwapSignal}" Value="Below VWAP">
-                                                <Setter Property="Foreground" Value="Red"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-
-                <DataGridTemplateColumn Header="vs Close" Width="100">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding PriceVsCloseSignal}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding PriceVsCloseSignal}" Value="Above Close">
-                                                <Setter Property="Foreground" Value="Green"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding PriceVsCloseSignal}" Value="Below Close">
-                                                <Setter Property="Foreground" Value="Red"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-
-                <DataGridTemplateColumn Header="Day Range" Width="100">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding DayRangeSignal}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DayRangeSignal}" Value="Near High">
-                                                <Setter Property="Foreground" Value="Green"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding DayRangeSignal}" Value="Near Low">
-                                                <Setter Property="Foreground" Value="Red"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-
-                <DataGridTemplateColumn Header="Open Drive" Width="100">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding OpenDriveSignal}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding OpenDriveSignal}" Value="Drive Up">
-                                                <Setter Property="Foreground" Value="Green"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding OpenDriveSignal}" Value="Drive Down">
                                                 <Setter Property="Foreground" Value="Red"/>
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -287,10 +187,6 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-
-                <!-- =================================================================== -->
-                <!--    NEWLY ADDED MARKET PROFILE AND INITIAL BALANCE COLUMNS           -->
-                <!-- =================================================================== -->
 
                 <DataGridTextColumn Header="IB High" Binding="{Binding InitialBalanceHigh, StringFormat={}{0:N2}}" Width="100"/>
                 <DataGridTextColumn Header="IB Low" Binding="{Binding InitialBalanceLow, StringFormat={}{0:N2}}" Width="100"/>
@@ -335,11 +231,9 @@
                                             <DataTrigger Binding="{Binding MarketProfileSignal, Converter={StaticResource ValueToSignConverter}, ConverterParameter='ContainsAcceptance'}" Value="True">
                                                 <Setter Property="FontWeight" Value="Bold"/>
                                             </DataTrigger>
-                                            <!-- CORRECTED: Escaped '>' with '&gt;' -->
                                             <DataTrigger Binding="{Binding MarketProfileSignal, Converter={StaticResource ValueToSignConverter}, ConverterParameter='Contains &gt; Y-VAH'}" Value="True">
                                                 <Setter Property="Foreground" Value="DarkGreen"/>
                                             </DataTrigger>
-                                            <!-- CORRECTED: Escaped '<' with '&lt;' -->
                                             <DataTrigger Binding="{Binding MarketProfileSignal, Converter={StaticResource ValueToSignConverter}, ConverterParameter='Contains &lt; Y-VAL'}" Value="True">
                                                 <Setter Property="Foreground" Value="DarkRed"/>
                                             </DataTrigger>
@@ -357,94 +251,6 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <!-- =================================================================== -->
-                <!--    END OF NEWLY ADDED COLUMNS                                       -->
-                <!-- =================================================================== -->
-
-                <DataGridTextColumn Header="1m ATR" Binding="{Binding Atr1Min, StringFormat=N2}" Width="80"/>
-                <DataGridTemplateColumn Header="1m ATR Signal" Width="140">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding AtrSignal1Min}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding AtrSignal1Min}" Value="Vol Expanding">
-                                                <Setter Property="Foreground" Value="Green"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding AtrSignal1Min}" Value="Vol Contracting">
-                                                <Setter Property="Foreground" Value="OrangeRed"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding AtrSignal1Min}" Value="High Vol">
-                                                <Setter Property="Foreground" Value="DarkGreen"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding AtrSignal1Min}" Value="Low Vol">
-                                                <Setter Property="Foreground" Value="Gray"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-
-                <DataGridTextColumn Header="5m ATR" Binding="{Binding Atr5Min, StringFormat=N2}" Width="80"/>
-                <DataGridTemplateColumn Header="5m ATR Signal" Width="140">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding AtrSignal5Min}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding AtrSignal5Min}" Value="Vol Expanding">
-                                                <Setter Property="Foreground" Value="Green"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding AtrSignal5Min}" Value="Vol Contracting">
-                                                <Setter Property="Foreground" Value="OrangeRed"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding AtrSignal5Min}" Value="High Vol">
-                                                <Setter Property="Foreground" Value="DarkGreen"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding AtrSignal5Min}" Value="Low Vol">
-                                                <Setter Property="Foreground" Value="Gray"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-
-                <DataGridTemplateColumn Header="1m OBV Trend" Width="130">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding ObvSignal1Min}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding ObvSignal1Min}" Value="Bullish Cross">
-                                                <Setter Property="Foreground" Value="DarkGreen"/>
-                                                <Setter Property="FontWeight" Value="Bold"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding ObvSignal1Min}" Value="Bearish Cross">
-                                                <Setter Property="Foreground" Value="DarkRed"/>
-                                                <Setter Property="FontWeight" Value="Bold"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding ObvSignal1Min}" Value="Trending Up">
-                                                <Setter Property="Foreground" Value="Green"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding ObvSignal1Min}" Value="Trending Down">
-                                                <Setter Property="Foreground" Value="Red"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="1m OBV Divergence" Width="150">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -466,34 +272,6 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTemplateColumn Header="5m OBV Trend" Width="130">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding ObvSignal5Min}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding ObvSignal5Min}" Value="Bullish Cross">
-                                                <Setter Property="Foreground" Value="DarkGreen"/>
-                                                <Setter Property="FontWeight" Value="Bold"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding ObvSignal5Min}" Value="Bearish Cross">
-                                                <Setter Property="Foreground" Value="DarkRed"/>
-                                                <Setter Property="FontWeight" Value="Bold"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding ObvSignal5Min}" Value="Trending Up">
-                                                <Setter Property="Foreground" Value="Green"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding ObvSignal5Min}" Value="Trending Down">
-                                                <Setter Property="Foreground" Value="Red"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="5m OBV Divergence" Width="150">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -515,55 +293,6 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="1 Min EMA" Binding="{Binding EmaSignal1Min}" Width="110" IsReadOnly="True">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="HorizontalAlignment" Value="Center"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding EmaSignal1Min}" Value="Bullish Cross">
-                                    <Setter Property="Foreground" Value="Green"/>
-                                    <Setter Property="FontWeight" Value="Bold"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding EmaSignal1Min}" Value="Bearish Cross">
-                                    <Setter Property="Foreground" Value="Red"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="5 Min EMA" Binding="{Binding EmaSignal5Min}" Width="110" IsReadOnly="True">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="HorizontalAlignment" Value="Center"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding EmaSignal5Min}" Value="Bullish Cross">
-                                    <Setter Property="Foreground" Value="Green"/>
-                                    <Setter Property="FontWeight" Value="Bold"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding EmaSignal5Min}" Value="Bearish Cross">
-                                    <Setter Property="Foreground" Value="Red"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="15 Min EMA" Binding="{Binding EmaSignal15Min}" Width="110" IsReadOnly="True">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="HorizontalAlignment" Value="Center"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding EmaSignal15Min}" Value="Bullish Cross">
-                                    <Setter Property="Foreground" Value="Green"/>
-                                    <Setter Property="FontWeight" Value="Bold"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding EmaSignal15Min}" Value="Bearish Cross">
-                                    <Setter Property="Foreground" Value="Red"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="1m RSI" Binding="{Binding RsiValue1Min, StringFormat=N2}" Width="80"/>
                 <DataGridTemplateColumn Header="1m RSI Signal" Width="150">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -584,7 +313,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="5m RSI" Binding="{Binding RsiValue5Min, StringFormat=N2}" Width="80"/>
+
                 <DataGridTemplateColumn Header="5m RSI Signal" Width="150">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -606,56 +335,6 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="1m VWAP EMA" Binding="{Binding VwapEmaSignal1Min}" Width="120" IsReadOnly="True">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="HorizontalAlignment" Value="Center"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding VwapEmaSignal1Min}" Value="Bullish Cross">
-                                    <Setter Property="Foreground" Value="Green"/>
-                                    <Setter Property="FontWeight" Value="Bold"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding VwapEmaSignal1Min}" Value="Bearish Cross">
-                                    <Setter Property="Foreground" Value="Red"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="5m VWAP EMA" Binding="{Binding VwapEmaSignal5Min}" Width="120" IsReadOnly="True">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="HorizontalAlignment" Value="Center"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding VwapEmaSignal5Min}" Value="Bullish Cross">
-                                    <Setter Property="Foreground" Value="Green"/>
-                                    <Setter Property="FontWeight" Value="Bold"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding VwapEmaSignal5Min}" Value="Bearish Cross">
-                                    <Setter Property="Foreground" Value="Red"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="15m VWAP EMA" Binding="{Binding VwapEmaSignal15Min}" Width="120" IsReadOnly="True">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="HorizontalAlignment" Value="Center"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding VwapEmaSignal15Min}" Value="Bullish Cross">
-                                    <Setter Property="Foreground" Value="Green"/>
-                                    <Setter Property="FontWeight" Value="Bold"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding VwapEmaSignal15Min}" Value="Bearish Cross">
-                                    <Setter Property="Foreground" Value="Red"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-
-
                 <DataGridTextColumn Header="IV Rank" Binding="{Binding IvRank, StringFormat=N2}" Width="80"/>
                 <DataGridTextColumn Header="IVP (Day)" Binding="{Binding IvPercentile, StringFormat=N2}" Width="80"/>
                 <DataGridTemplateColumn Header="IV Trend" Width="150">
@@ -673,31 +352,6 @@
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding IvTrendSignal}" Value="IV Low &amp; Stable">
                                                 <Setter Property="Foreground" Value="OrangeRed"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-
-                <!-- MOVED: Volume columns to the far right for better grouping -->
-                <DataGridTextColumn Header="Current Vol" Binding="{Binding CurrentVolume, StringFormat=N0}" Width="100"/>
-                <DataGridTextColumn Header="Avg Vol" Binding="{Binding AvgVolume, StringFormat=N0}" Width="100"/>
-                <DataGridTemplateColumn Header="Vol Signal" Width="120">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding VolumeSignal}" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding VolumeSignal}" Value="Volume Burst">
-                                                <Setter Property="Foreground" Value="DodgerBlue"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding VolumeSignal}" Value="Neutral">
-                                                <Setter Property="Foreground" Value="Gray"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>

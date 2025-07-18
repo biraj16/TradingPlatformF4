@@ -32,7 +32,6 @@ namespace TradingConsole.Wpf.Services
         private readonly MarketProfileService _marketProfileService;
         private readonly IndicatorStateService _indicatorStateService;
         private readonly SignalLoggerService _signalLoggerService;
-        // --- NEW: Reference to the DashboardViewModel to access monitored options ---
         private readonly DashboardViewModel _dashboardViewModel;
         private readonly Dictionary<string, List<MarketProfileData>> _historicalMarketProfiles = new Dictionary<string, List<MarketProfileData>>();
 
@@ -91,7 +90,6 @@ namespace TradingConsole.Wpf.Services
             _marketProfileService = marketProfileService;
             _indicatorStateService = indicatorStateService;
             _signalLoggerService = signalLoggerService;
-            // --- NEW: Store reference to DashboardViewModel ---
             _dashboardViewModel = dashboardViewModel;
 
             UpdateParametersFromSettings();
@@ -1118,29 +1116,21 @@ namespace TradingConsole.Wpf.Services
             var context = DetermineIntradayContext(result);
             result.IntradayContext = context;
 
-            string playbook = "Neutral / Observe";
-            int conviction = 0;
+            var (bullDrivers, bearDrivers, conviction) = CalculateConvictionScore(result, context);
+            result.BullishDrivers = bullDrivers;
+            result.BearishDrivers = bearDrivers;
+            result.ConvictionScore = conviction;
 
-            switch (context)
-            {
-                case IntradayContext.Trending:
-                    (playbook, conviction) = SynthesizeTrendingPlaybook(result);
-                    break;
-                case IntradayContext.RangeBound:
-                    (playbook, conviction) = SynthesizeRangeBoundPlaybook(result);
-                    break;
-                case IntradayContext.Breakout:
-                    (playbook, conviction) = SynthesizeBreakoutPlaybook(result);
-                    break;
-                case IntradayContext.Volatile:
-                    playbook = "Volatile: High Risk, No Clear Edge";
-                    conviction = 0;
-                    break;
-            }
+            string playbook;
+            if (conviction >= 7) playbook = "Strong Bullish Conviction";
+            else if (conviction >= 3) playbook = "Moderate Bullish Conviction";
+            else if (conviction <= -7) playbook = "Strong Bearish Conviction";
+            else if (conviction <= -3) playbook = "Moderate Bearish Conviction";
+            else playbook = "Neutral / Observe";
+
 
             string oldSignal = result.FinalTradeSignal;
             result.FinalTradeSignal = playbook;
-            result.ConvictionScore = conviction;
             result.MarketNarrative = GenerateMarketNarrative(result);
 
             if (result.FinalTradeSignal != oldSignal && Math.Abs(result.ConvictionScore) >= 5)
@@ -1149,209 +1139,100 @@ namespace TradingConsole.Wpf.Services
             }
         }
 
-        // --- NEW: Calculate PCR from dashboard options ---
-        private decimal CalculateDashboardPcr(string underlyingSymbol)
+        private (List<string> BullishDrivers, List<string> BearishDrivers, int Score) CalculateConvictionScore(AnalysisResult r, IntradayContext context)
         {
-            var relevantOptions = _dashboardViewModel.MonitoredInstruments
-                .Where(i => i.UnderlyingSymbol == underlyingSymbol && i.InstrumentType == "OPTIDX")
-                .ToList();
+            var bullDrivers = new List<SignalDriver>();
+            var bearDrivers = new List<SignalDriver>();
 
-            if (!relevantOptions.Any()) return 0;
+            switch (context)
+            {
+                case IntradayContext.Trending:
+                case IntradayContext.Breakout:
+                    bullDrivers = _settingsViewModel.Strategy.TrendingBullDrivers.Where(d => d.IsEnabled).ToList();
+                    bearDrivers = _settingsViewModel.Strategy.TrendingBearDrivers.Where(d => d.IsEnabled).ToList();
+                    break;
+                case IntradayContext.RangeBound:
+                    bullDrivers = _settingsViewModel.Strategy.RangeBoundBullishDrivers.Where(d => d.IsEnabled).ToList();
+                    bearDrivers = _settingsViewModel.Strategy.RangeBoundBearishDrivers.Where(d => d.IsEnabled).ToList();
+                    break;
+                case IntradayContext.Volatile:
+                    bullDrivers = _settingsViewModel.Strategy.VolatileBullishDrivers.Where(d => d.IsEnabled).ToList();
+                    bearDrivers = _settingsViewModel.Strategy.VolatileBearishDrivers.Where(d => d.IsEnabled).ToList();
+                    break;
+            }
 
-            long totalCallOi = relevantOptions.Where(o => o.DisplayName.Contains("CALL")).Sum(o => o.OpenInterest);
-            long totalPutOi = relevantOptions.Where(o => o.DisplayName.Contains("PUT")).Sum(o => o.OpenInterest);
-
-            if (totalCallOi == 0) return 0;
-
-            return (decimal)totalPutOi / totalCallOi;
-        }
-
-        private void UpdateComprehensiveIndexSignal(AnalysisResult result)
-        {
-            var signal = new IndexSignal();
-            var supporting = new List<string>();
-            var contradicting = new List<string>();
             int score = 0;
+            var triggeredBullDrivers = new List<string>();
+            var triggeredBearDrivers = new List<string>();
 
-            if (result.DailyBias.Contains("Bullish"))
+            foreach (var driver in bullDrivers)
             {
-                signal.Bias = "Bullish";
-                supporting.Add($"Daily Bias: {result.DailyBias}");
-                score += 2;
-            }
-            else if (result.DailyBias.Contains("Bearish"))
-            {
-                signal.Bias = "Bearish";
-                supporting.Add($"Daily Bias: {result.DailyBias}");
-                score -= 2;
-            }
-            else
-            {
-                signal.Bias = "Neutral / Rotational";
-                supporting.Add($"Daily Bias: {result.DailyBias}");
+                if (CheckDriverCondition(r, driver.Name))
+                {
+                    score += driver.Weight;
+                    triggeredBullDrivers.Add($"{driver.Name} (+{driver.Weight})");
+                }
             }
 
-            if (result.EmaSignal5Min == "Bullish Cross" && result.EmaSignal15Min == "Bullish Cross")
+            foreach (var driver in bearDrivers)
             {
-                signal.TrendDirection = "Uptrend";
-                supporting.Add("5m & 15m EMAs are in a bullish cross.");
-                score += 2;
-            }
-            else if (result.EmaSignal5Min == "Bearish Cross" && result.EmaSignal15Min == "Bearish Cross")
-            {
-                signal.TrendDirection = "Downtrend";
-                supporting.Add("5m & 15m EMAs are in a bearish cross.");
-                score -= 2;
-            }
-            else
-            {
-                signal.TrendDirection = "Sideways / Choppy";
-                supporting.Add("5m & 15m EMAs are not aligned.");
+                if (CheckDriverCondition(r, driver.Name))
+                {
+                    score -= driver.Weight;
+                    triggeredBearDrivers.Add($"{driver.Name} (-{driver.Weight})");
+                }
             }
 
-            var convictionFactors = new List<string>();
-            if (result.InstitutionalIntent.Contains("Bullish") && signal.TrendDirection == "Uptrend")
-            {
-                convictionFactors.Add("Futures premium confirms bullish conviction.");
-                score += 2;
-            }
-            else if (result.InstitutionalIntent.Contains("Bearish") && signal.TrendDirection == "Downtrend")
-            {
-                convictionFactors.Add("Futures discount confirms bearish conviction.");
-                score -= 2;
-            }
-
-            decimal pcr = CalculateDashboardPcr(result.Symbol);
-            if (pcr > 1.0m && signal.TrendDirection == "Uptrend")
-            {
-                convictionFactors.Add($"Dashboard PCR ({pcr:F2}) is bullish.");
-                score += 1;
-            }
-            else if (pcr > 0 && pcr < 0.8m && signal.TrendDirection == "Downtrend")
-            {
-                convictionFactors.Add($"Dashboard PCR ({pcr:F2}) is bearish.");
-                score -= 1;
-            }
-
-            signal.TrendConviction = convictionFactors.Any() ? $"Medium ({string.Join(" ", convictionFactors)})" : "Low";
-
-            if (result.RsiSignal5Min.Contains("Bullish Divergence") || result.ObvDivergenceSignal5Min.Contains("Bullish Divergence"))
-            {
-                signal.Momentum = "Fading (Bullish Reversal Signal)";
-                contradicting.Add("Bearish trend momentum is fading (RSI/OBV divergence).");
-            }
-            else if (result.RsiValue5Min > 60 && result.RsiValue5Min > result.RsiValue1Min)
-            {
-                signal.Momentum = "Increasing (Bullish)";
-                supporting.Add("RSI (5m) shows strong upward momentum.");
-                score += 1;
-            }
-            else if (result.RsiValue5Min < 40 && result.RsiValue5Min < result.RsiValue1Min)
-            {
-                signal.Momentum = "Increasing (Bearish)";
-                supporting.Add("RSI (5m) shows strong downward momentum.");
-                score -= 1;
-            }
-            else
-            {
-                signal.Momentum = "Neutral";
-            }
-
-            if (result.AtrSignal5Min == "Vol Expanding")
-            {
-                signal.Volatility = "Expanding";
-                supporting.Add("ATR indicates volatility is increasing.");
-            }
-            else if (result.AtrSignal5Min == "Vol Contracting")
-            {
-                signal.Volatility = "Contracting";
-                supporting.Add("ATR indicates volatility is decreasing.");
-            }
-            else
-            {
-                signal.Volatility = "Stable";
-            }
-
-            if (score >= 5) signal.OverallSignal = "Strong Buy Opportunity";
-            else if (score >= 2) signal.OverallSignal = "Cautious Buy";
-            else if (score <= -5) signal.OverallSignal = "Strong Sell Opportunity";
-            else if (score <= -2) signal.OverallSignal = "Cautious Sell";
-            else signal.OverallSignal = "Observe / No Clear Edge";
-
-            signal.SupportingFactors = supporting;
-            signal.ContradictingFactors = contradicting;
-
-            result.IndexSignal = signal;
+            return (triggeredBullDrivers, triggeredBearDrivers, score);
         }
 
-        private (string, int) SynthesizeTrendingPlaybook(AnalysisResult r)
+        private bool CheckDriverCondition(AnalysisResult r, string driverName)
         {
-            bool isBull = r.EmaSignal15Min == "Bullish Cross";
-            int score = isBull ? 1 : -1;
+            // This switch statement evaluates the condition for each driver name.
+            switch (driverName)
+            {
+                // Trending Bull Drivers
+                case "Institutional Intent is Bullish": return r.InstitutionalIntent.Contains("Bullish");
+                case "Price above VWAP": return r.PriceVsVwapSignal == "Above VWAP";
+                case "5m VWAP EMA confirms bullish trend": return r.VwapEmaSignal5Min == "Bullish Cross";
+                case "OI confirms new longs": return r.OiSignal == "Long Buildup";
+                case "IB breakout is extending": return r.InitialBalanceSignal == "IB Extension Up";
+                case "IV contracting supports calm uptrend": return r.AtrSignal5Min == "Vol Contracting" || r.IvTrendSignal == "IV Contraction";
+                case "Bullish OBV Div at Profile Support": return r.ObvDivergenceSignal5Min.Contains("Bullish") && (r.MarketProfileSignal.Contains("dVAL") || r.MarketProfileSignal.Contains("Y-VAL"));
+                case "Bullish RSI Div at Profile Support": return r.RsiSignal5Min.Contains("Bullish") && (r.MarketProfileSignal.Contains("dVAL") || r.MarketProfileSignal.Contains("Y-VAL"));
 
-            if (isBull)
-            {
-                if (r.PriceVsVwapSignal == "Above VWAP") score += 2;
-                if (r.AnchoredVwap > 0 && r.LTP > r.AnchoredVwap) score += 2;
-                if (r.VwapBandSignal == "At Lower Band") return ("Bullish Trend: Pullback to VWAP Band", 7);
-                if (r.PriceVsVwapSignal == "At VWAP") return ("Bullish Trend: Testing VWAP Support", 6);
-                return ("Bullish Trend: Continuation", score);
-            }
-            else
-            {
-                if (r.PriceVsVwapSignal == "Below VWAP") score -= 2;
-                if (r.AnchoredVwap > 0 && r.LTP < r.AnchoredVwap) score -= 2;
-                if (r.VwapBandSignal == "At Upper Band") return ("Bearish Trend: Pullback to VWAP Band", -7);
-                if (r.PriceVsVwapSignal == "At VWAP") return ("Bearish Trend: Testing VWAP Resistance", -6);
-                return ("Bearish Trend: Continuation", score);
+                // Trending Bear Drivers
+                case "Institutional Intent is Bearish": return r.InstitutionalIntent.Contains("Bearish");
+                case "Price below VWAP": return r.PriceVsVwapSignal == "Below VWAP";
+                case "5m VWAP EMA confirms bearish trend": return r.VwapEmaSignal5Min == "Bearish Cross";
+                case "OI confirms new shorts": return r.OiSignal == "Short Buildup";
+                case "IB breakdown is extending": return r.InitialBalanceSignal == "IB Extension Down";
+                case "IV spiking confirms fear": return r.IvSignal == "IV Spike Up" || r.AtrSignal5Min == "Vol Expanding";
+                case "Bearish OBV Div at Profile Resistance": return r.ObvDivergenceSignal5Min.Contains("Bearish") && (r.MarketProfileSignal.Contains("dVAH") || r.MarketProfileSignal.Contains("Y-VAH"));
+                case "Bearish RSI Div at Profile Resistance": return r.RsiSignal5Min.Contains("Bearish") && (r.MarketProfileSignal.Contains("dVAH") || r.MarketProfileSignal.Contains("Y-VAH"));
+
+                // Range Bound Bullish Drivers
+                case "Bullish OBV Div at range low": return r.ObvDivergenceSignal5Min.Contains("Bullish") && r.VwapBandSignal == "At Lower Band";
+                case "Bullish RSI Div at range low": return r.RsiSignal5Min.Contains("Bullish") && r.VwapBandSignal == "At Lower Band";
+                case "Low volume suggests exhaustion (Bullish)": return r.VolumeSignal != "Volume Burst" && r.AtrSignal5Min == "Vol Contracting" && r.DayRangeSignal == "Near Low";
+                case "Possible range breakout with volume": return r.DayRangeSignal == "Near High" && r.VolumeSignal == "Volume Burst";
+
+                // Range Bound Bearish Drivers
+                case "Bearish OBV Div at range high": return r.ObvDivergenceSignal5Min.Contains("Bearish") && r.VwapBandSignal == "At Upper Band";
+                case "Bearish RSI Div at range high": return r.RsiSignal5Min.Contains("Bearish") && r.VwapBandSignal == "At Upper Band";
+                case "Low volume suggests exhaustion (Bearish)": return r.VolumeSignal != "Volume Burst" && r.AtrSignal5Min == "Vol Contracting" && r.DayRangeSignal == "Near High";
+                case "Possible range breakdown with volume": return r.DayRangeSignal == "Near Low" && r.VolumeSignal == "Volume Burst";
+
+                // Volatile Bullish Drivers
+                case "Strong bullish confluence with Inst. backing": return r.InstitutionalIntent.Contains("Bullish") && r.EmaSignal5Min == "Bullish Cross" && r.VolumeSignal == "Volume Burst";
+
+                // Volatile Bearish Drivers
+                case "Strong bearish confluence with Inst. backing": return r.InstitutionalIntent.Contains("Bearish") && r.EmaSignal5Min == "Bearish Cross" && r.VolumeSignal == "Volume Burst";
+
+                default: return false;
             }
         }
 
-        private (string, int) SynthesizeRangeBoundPlaybook(AnalysisResult r)
-        {
-            if (r.VwapBandSignal == "At Upper Band" && r.RsiValue5Min > 65)
-            {
-                return ("Range Reversion: Fading at Upper Band", -5);
-            }
-            if (r.VwapBandSignal == "At Lower Band" && r.RsiValue5Min < 35)
-            {
-                return ("Range Reversion: Buying at Lower Band", 5);
-            }
-            if (r.YesterdayProfileSignal.Contains("Y-VAH") || r.YesterdayProfileSignal.Contains("Y-POC"))
-            {
-                return ("Range Bound: At Yesterday's Value Resistance", -4);
-            }
-            if (r.YesterdayProfileSignal.Contains("Y-VAL"))
-            {
-                return ("Range Bound: At Yesterday's Value Support", 4);
-            }
-
-            return ("Range Bound: Chop Zone, No Edge", 0);
-        }
-
-        private (string, int) SynthesizeBreakoutPlaybook(AnalysisResult r)
-        {
-            if (r.InitialBalanceSignal == "IB Breakout" && r.VolumeSignal == "Volume Burst")
-            {
-                if (r.YesterdayProfileSignal == "Trading Above Y-VAH") return ("Bullish Breakout: Acceptance Above Value", 8);
-                return ("Bullish Breakout: Initial Thrust", 6);
-            }
-            if (r.InitialBalanceSignal == "IB Breakdown" && r.VolumeSignal == "Volume Burst")
-            {
-                if (r.YesterdayProfileSignal == "Trading Below Y-VAL") return ("Bearish Breakout: Acceptance Below Value", -8);
-                return ("Bearish Breakout: Initial Thrust", -6);
-            }
-            if (r.InitialBalanceSignal == "IB Failed Breakout")
-            {
-                return ("Breakout Failure: Potential Reversion to Mean", -7);
-            }
-            if (r.InitialBalanceSignal == "IB Failed Breakdown")
-            {
-                return ("Breakdown Failure: Potential Reversion to Mean", 7);
-            }
-
-            return ("Breakout Context: Awaiting Confirmation", 0);
-        }
 
         private string GenerateMarketNarrative(AnalysisResult r)
         {
@@ -1375,6 +1256,98 @@ namespace TradingConsole.Wpf.Services
             }
 
             return string.Join(" ", narrative);
+        }
+
+        private decimal CalculateDashboardPcr(string underlyingSymbol)
+        {
+            var relevantOptions = _dashboardViewModel.MonitoredInstruments
+                .Where(i => i.UnderlyingSymbol == underlyingSymbol && i.InstrumentType == "OPTIDX")
+                .ToList();
+
+            if (!relevantOptions.Any()) return 0;
+
+            long totalCallOi = relevantOptions.Where(o => o.DisplayName.Contains("CALL")).Sum(o => o.OpenInterest);
+            long totalPutOi = relevantOptions.Where(o => o.DisplayName.Contains("PUT")).Sum(o => o.OpenInterest);
+
+            if (totalCallOi == 0) return 0;
+
+            return (decimal)totalPutOi / totalCallOi;
+        }
+
+        private void UpdateComprehensiveIndexSignal(AnalysisResult result)
+        {
+            var signal = new IndexSignal();
+
+            int score = result.ConvictionScore;
+
+            if (result.DailyBias.Contains("Bullish"))
+            {
+                signal.Bias = "Bullish";
+            }
+            else if (result.DailyBias.Contains("Bearish"))
+            {
+                signal.Bias = "Bearish";
+            }
+            else
+            {
+                signal.Bias = "Neutral / Rotational";
+            }
+
+            if (result.EmaSignal5Min == "Bullish Cross" && result.EmaSignal15Min == "Bullish Cross")
+            {
+                signal.TrendDirection = "Uptrend";
+            }
+            else if (result.EmaSignal5Min == "Bearish Cross" && result.EmaSignal15Min == "Bearish Cross")
+            {
+                signal.TrendDirection = "Downtrend";
+            }
+            else
+            {
+                signal.TrendDirection = "Sideways / Choppy";
+            }
+
+            signal.TrendConviction = result.InstitutionalIntent;
+
+            if (result.RsiSignal5Min.Contains("Bullish Divergence") || result.ObvDivergenceSignal5Min.Contains("Bullish Divergence"))
+            {
+                signal.Momentum = "Fading (Bullish Reversal Signal)";
+            }
+            else if (result.RsiValue5Min > 60 && result.RsiValue5Min > result.RsiValue1Min)
+            {
+                signal.Momentum = "Increasing (Bullish)";
+            }
+            else if (result.RsiValue5Min < 40 && result.RsiValue5Min < result.RsiValue1Min)
+            {
+                signal.Momentum = "Increasing (Bearish)";
+            }
+            else
+            {
+                signal.Momentum = "Neutral";
+            }
+
+            if (result.AtrSignal5Min == "Vol Expanding")
+            {
+                signal.Volatility = "Expanding";
+            }
+            else if (result.AtrSignal5Min == "Vol Contracting")
+            {
+                signal.Volatility = "Contracting";
+            }
+            else
+            {
+                signal.Volatility = "Stable";
+            }
+
+            if (score >= 7) signal.OverallSignal = "Strong Buy Opportunity";
+            else if (score >= 3) signal.OverallSignal = "Cautious Buy";
+            else if (score <= -7) signal.OverallSignal = "Strong Sell Opportunity";
+            else if (score <= -3) signal.OverallSignal = "Cautious Sell";
+            else signal.OverallSignal = "Observe / No Clear Edge";
+
+            signal.SupportingFactors = result.BullishDrivers;
+            signal.ContradictingFactors = result.BearishDrivers;
+
+            result.IndexSignal = signal;
         }
 
 

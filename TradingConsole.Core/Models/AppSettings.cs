@@ -26,7 +26,6 @@ namespace TradingConsole.Core.Models
 
         public SignalDriver() { }
 
-        // FIX CS0108: Added 'new' keyword to indicate that this method is intentionally hiding the base class method.
         protected new bool SetProperty<T>(ref T backingStore, T value, [CallerMemberName] string propertyName = "")
         {
             if (EqualityComparer<T>.Default.Equals(backingStore, value)) return false;
@@ -51,7 +50,7 @@ namespace TradingConsole.Core.Models
             {
                 new SignalDriver("Institutional Intent is Bullish", 3),
                 new SignalDriver("Price above VWAP", 2),
-                new SignalDriver("5m VWAP EMA confirms trend", 1),
+                new SignalDriver("5m VWAP EMA confirms bullish trend", 1), // MODIFIED: Unique Name
                 new SignalDriver("OI confirms new longs", 2),
                 new SignalDriver("IB breakout is extending", 2),
                 new SignalDriver("IV contracting supports calm uptrend", 1),
@@ -63,7 +62,7 @@ namespace TradingConsole.Core.Models
             {
                 new SignalDriver("Institutional Intent is Bearish", 3),
                 new SignalDriver("Price below VWAP", 2),
-                new SignalDriver("5m VWAP EMA confirms trend", 1),
+                new SignalDriver("5m VWAP EMA confirms bearish trend", 1), // MODIFIED: Unique Name
                 new SignalDriver("OI confirms new shorts", 2),
                 new SignalDriver("IB breakdown is extending", 2),
                 new SignalDriver("IV spiking confirms fear", 2),
@@ -128,7 +127,6 @@ namespace TradingConsole.Core.Models
 
         public int ObvMovingAveragePeriod { get; set; }
 
-        // --- NEW: Settings for VWAP Bands ---
         public decimal VwapUpperBandMultiplier { get; set; }
         public decimal VwapLowerBandMultiplier { get; set; }
 
@@ -187,7 +185,6 @@ namespace TradingConsole.Core.Models
 
             ObvMovingAveragePeriod = 20;
 
-            // --- NEW: Default values for VWAP Bands ---
             VwapUpperBandMultiplier = 2.0m;
             VwapLowerBandMultiplier = 2.0m;
 

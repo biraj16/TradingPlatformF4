@@ -6,7 +6,6 @@ using TradingConsole.Wpf.Services;
 
 namespace TradingConsole.Wpf.ViewModels
 {
-    // --- NEW: Class to hold the comprehensive, synthesized signal for an index ---
     public class IndexSignal : ObservableModel
     {
         private string _bias = "Neutral";
@@ -44,11 +43,13 @@ namespace TradingConsole.Wpf.ViewModels
             set { if (_isExpanded != value) { _isExpanded = value; OnPropertyChanged(); } }
         }
 
+        // --- NEW: Lists to store the specific drivers that fired ---
         private List<string> _bullishDrivers = new List<string>();
-        public List<string> BullishDrivers { get => _bullishDrivers; set { if (_bullishDrivers != value) { _bullishDrivers = value; OnPropertyChanged(); } } }
+        public List<string> BullishDrivers { get => _bullishDrivers; set => SetProperty(ref _bullishDrivers, value); }
 
         private List<string> _bearishDrivers = new List<string>();
-        public List<string> BearishDrivers { get => _bearishDrivers; set { if (_bearishDrivers != value) { _bearishDrivers = value; OnPropertyChanged(); } } }
+        public List<string> BearishDrivers { get => _bearishDrivers; set => SetProperty(ref _bearishDrivers, value); }
+
 
         public List<string> KeySignalDrivers => BullishDrivers.Concat(BearishDrivers).ToList();
 

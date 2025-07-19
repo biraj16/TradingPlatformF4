@@ -1,25 +1,26 @@
-﻿using System.ComponentModel;
+﻿// In TradingConsole.Core/Models/FundDetails.cs
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace TradingConsole.Core.Models
 {
-    public class FundDetails : INotifyPropertyChanged
+    // --- REFACTORED: This class now inherits from ObservableModel to remove redundant code.
+    public class FundDetails : ObservableModel
     {
-        // ... all properties ...
         private decimal _availableBalance;
-        public decimal AvailableBalance { get => _availableBalance; set { if (_availableBalance != value) { _availableBalance = value; OnPropertyChanged(); } } }
+        public decimal AvailableBalance { get => _availableBalance; set => SetProperty(ref _availableBalance, value); }
+
         private decimal _utilizedMargin;
-        public decimal UtilizedMargin { get => _utilizedMargin; set { if (_utilizedMargin != value) { _utilizedMargin = value; OnPropertyChanged(); } } }
+        public decimal UtilizedMargin { get => _utilizedMargin; set => SetProperty(ref _utilizedMargin, value); }
+
         private decimal _collateral;
-        public decimal Collateral { get => _collateral; set { if (_collateral != value) { _collateral = value; OnPropertyChanged(); } } }
+        public decimal Collateral { get => _collateral; set => SetProperty(ref _collateral, value); }
+
         private decimal _withdrawableBalance;
-        public decimal WithdrawableBalance { get => _withdrawableBalance; set { if (_withdrawableBalance != value) { _withdrawableBalance = value; OnPropertyChanged(); } } }
+        public decimal WithdrawableBalance { get => _withdrawableBalance; set => SetProperty(ref _withdrawableBalance, value); }
 
-
-        public event PropertyChangedEventHandler? PropertyChanged; // FIX: Nullable event
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null) // FIX: Nullable propertyName
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        // --- REFACTORED: The PropertyChanged event and OnPropertyChanged method are now inherited
+        // from ObservableModel and have been removed from this class.
+        // The SetProperty helper from the base class is now used in the property setters.
     }
 }

@@ -36,14 +36,74 @@ namespace TradingConsole.Wpf.ViewModels
 
     public class AnalysisResult : ObservableModel
     {
-        private bool _isExpanded;
-        public bool IsExpanded
+        // --- REFACTORED: This new method encapsulates the logic for updating an existing object
+        // from a new one, which removes a massive block of redundant code from AnalysisTabViewModel.
+        public void Update(AnalysisResult source)
         {
-            get => _isExpanded;
-            set { if (_isExpanded != value) { _isExpanded = value; OnPropertyChanged(); } }
+            Symbol = source.Symbol;
+            LTP = source.LTP;
+            Vwap = source.Vwap;
+            CurrentVolume = source.CurrentVolume;
+            AvgVolume = source.AvgVolume;
+            VolumeSignal = source.VolumeSignal;
+            OiSignal = source.OiSignal;
+            InstrumentGroup = source.InstrumentGroup;
+            UnderlyingGroup = source.UnderlyingGroup;
+            EmaSignal1Min = source.EmaSignal1Min;
+            EmaSignal5Min = source.EmaSignal5Min;
+            EmaSignal15Min = source.EmaSignal15Min;
+            VwapEmaSignal1Min = source.VwapEmaSignal1Min;
+            VwapEmaSignal5Min = source.VwapEmaSignal5Min;
+            VwapEmaSignal15Min = source.VwapEmaSignal15Min;
+            PriceVsVwapSignal = source.PriceVsVwapSignal;
+            PriceVsCloseSignal = source.PriceVsCloseSignal;
+            DayRangeSignal = source.DayRangeSignal;
+            CustomLevelSignal = source.CustomLevelSignal;
+            CandleSignal1Min = source.CandleSignal1Min;
+            CandleSignal5Min = source.CandleSignal5Min;
+            CurrentIv = source.CurrentIv;
+            AvgIv = source.AvgIv;
+            IvSignal = source.IvSignal;
+            IvRank = source.IvRank;
+            IvPercentile = source.IvPercentile;
+            IvTrendSignal = source.IvTrendSignal;
+            RsiValue1Min = source.RsiValue1Min;
+            RsiSignal1Min = source.RsiSignal1Min;
+            RsiValue5Min = source.RsiValue5Min;
+            RsiSignal5Min = source.RsiSignal5Min;
+            ObvDivergenceSignal1Min = source.ObvDivergenceSignal1Min;
+            ObvDivergenceSignal5Min = source.ObvDivergenceSignal5Min;
+            Atr1Min = source.Atr1Min;
+            AtrSignal1Min = source.AtrSignal1Min;
+            Atr5Min = source.Atr5Min;
+            AtrSignal5Min = source.AtrSignal5Min;
+            DevelopingPoc = source.DevelopingPoc;
+            DevelopingVah = source.DevelopingVah;
+            DevelopingVal = source.DevelopingVal;
+            DevelopingVpoc = source.DevelopingVpoc;
+            MarketProfileSignal = source.MarketProfileSignal;
+            InitialBalanceHigh = source.InitialBalanceHigh;
+            InitialBalanceLow = source.InitialBalanceLow;
+            InitialBalanceSignal = source.InitialBalanceSignal;
+            InstitutionalIntent = source.InstitutionalIntent;
+            OpenTypeSignal = source.OpenTypeSignal;
+            YesterdayProfileSignal = source.YesterdayProfileSignal;
+            VwapBandSignal = source.VwapBandSignal;
+            VwapUpperBand = source.VwapUpperBand;
+            VwapLowerBand = source.VwapLowerBand;
+            AnchoredVwap = source.AnchoredVwap;
+            IntradayContext = source.IntradayContext;
+            MarketNarrative = source.MarketNarrative;
+            FinalTradeSignal = source.FinalTradeSignal;
+            ConvictionScore = source.ConvictionScore;
+            BullishDrivers = source.BullishDrivers;
+            BearishDrivers = source.BearishDrivers;
+            IndexSignal = source.IndexSignal;
         }
 
-        // --- NEW: Lists to store the specific drivers that fired ---
+        private bool _isExpanded;
+        public bool IsExpanded { get => _isExpanded; set => SetProperty(ref _isExpanded, value); }
+
         private List<string> _bullishDrivers = new List<string>();
         public List<string> BullishDrivers { get => _bullishDrivers; set => SetProperty(ref _bullishDrivers, value); }
 
@@ -80,110 +140,110 @@ namespace TradingConsole.Wpf.ViewModels
         private string _ivSignal = "N/A";
 
         private decimal _rsiValue1Min;
-        public decimal RsiValue1Min { get => _rsiValue1Min; set { if (_rsiValue1Min != value) { _rsiValue1Min = value; OnPropertyChanged(); } } }
+        public decimal RsiValue1Min { get => _rsiValue1Min; set => SetProperty(ref _rsiValue1Min, value); }
         private string _rsiSignal1Min = "N/A";
-        public string RsiSignal1Min { get => _rsiSignal1Min; set { if (_rsiSignal1Min != value) { _rsiSignal1Min = value; OnPropertyChanged(); } } }
+        public string RsiSignal1Min { get => _rsiSignal1Min; set => SetProperty(ref _rsiSignal1Min, value); }
         private decimal _rsiValue5Min;
-        public decimal RsiValue5Min { get => _rsiValue5Min; set { if (_rsiValue5Min != value) { _rsiValue5Min = value; OnPropertyChanged(); } } }
+        public decimal RsiValue5Min { get => _rsiValue5Min; set => SetProperty(ref _rsiValue5Min, value); }
         private string _rsiSignal5Min = "N/A";
-        public string RsiSignal5Min { get => _rsiSignal5Min; set { if (_rsiSignal5Min != value) { _rsiSignal5Min = value; OnPropertyChanged(); } } }
+        public string RsiSignal5Min { get => _rsiSignal5Min; set => SetProperty(ref _rsiSignal5Min, value); }
 
         private decimal _obvValue1Min;
-        public decimal ObvValue1Min { get => _obvValue1Min; set { if (_obvValue1Min != value) { _obvValue1Min = value; OnPropertyChanged(); } } }
+        public decimal ObvValue1Min { get => _obvValue1Min; set => SetProperty(ref _obvValue1Min, value); }
         private string _obvSignal1Min = "N/A";
-        public string ObvSignal1Min { get => _obvSignal1Min; set { if (_obvSignal1Min != value) { _obvSignal1Min = value; OnPropertyChanged(); } } }
+        public string ObvSignal1Min { get => _obvSignal1Min; set => SetProperty(ref _obvSignal1Min, value); }
         private string _obvDivergenceSignal1Min = "N/A";
-        public string ObvDivergenceSignal1Min { get => _obvDivergenceSignal1Min; set { if (_obvDivergenceSignal1Min != value) { _obvDivergenceSignal1Min = value; OnPropertyChanged(); } } }
+        public string ObvDivergenceSignal1Min { get => _obvDivergenceSignal1Min; set => SetProperty(ref _obvDivergenceSignal1Min, value); }
 
         private decimal _obvValue5Min;
-        public decimal ObvValue5Min { get => _obvValue5Min; set { if (_obvValue5Min != value) { _obvValue5Min = value; OnPropertyChanged(); } } }
+        public decimal ObvValue5Min { get => _obvValue5Min; set => SetProperty(ref _obvValue5Min, value); }
         private string _obvSignal5Min = "N/A";
-        public string ObvSignal5Min { get => _obvSignal5Min; set { if (_obvSignal5Min != value) { _obvSignal5Min = value; OnPropertyChanged(); } } }
+        public string ObvSignal5Min { get => _obvSignal5Min; set => SetProperty(ref _obvSignal5Min, value); }
         private string _obvDivergenceSignal5Min = "N/A";
-        public string ObvDivergenceSignal5Min { get => _obvDivergenceSignal5Min; set { if (_obvDivergenceSignal5Min != value) { _obvDivergenceSignal5Min = value; OnPropertyChanged(); } } }
+        public string ObvDivergenceSignal5Min { get => _obvDivergenceSignal5Min; set => SetProperty(ref _obvDivergenceSignal5Min, value); }
 
         private decimal _atr1Min;
-        public decimal Atr1Min { get => _atr1Min; set { if (_atr1Min != value) { _atr1Min = value; OnPropertyChanged(); } } }
+        public decimal Atr1Min { get => _atr1Min; set => SetProperty(ref _atr1Min, value); }
         private string _atrSignal1Min = "N/A";
-        public string AtrSignal1Min { get => _atrSignal1Min; set { if (_atrSignal1Min != value) { _atrSignal1Min = value; OnPropertyChanged(); } } }
+        public string AtrSignal1Min { get => _atrSignal1Min; set => SetProperty(ref _atrSignal1Min, value); }
 
         private decimal _atr5Min;
-        public decimal Atr5Min { get => _atr5Min; set { if (_atr5Min != value) { _atr5Min = value; OnPropertyChanged(); } } }
+        public decimal Atr5Min { get => _atr5Min; set => SetProperty(ref _atr5Min, value); }
         private string _atrSignal5Min = "N/A";
-        public string AtrSignal5Min { get => _atrSignal5Min; set { if (_atrSignal5Min != value) { _atrSignal5Min = value; OnPropertyChanged(); } } }
+        public string AtrSignal5Min { get => _atrSignal5Min; set => SetProperty(ref _atrSignal5Min, value); }
 
         private decimal _ivRank;
-        public decimal IvRank { get => _ivRank; set { if (_ivRank != value) { _ivRank = value; OnPropertyChanged(); } } }
+        public decimal IvRank { get => _ivRank; set => SetProperty(ref _ivRank, value); }
         private decimal _ivPercentile;
-        public decimal IvPercentile { get => _ivPercentile; set { if (_ivPercentile != value) { _ivPercentile = value; OnPropertyChanged(); } } }
+        public decimal IvPercentile { get => _ivPercentile; set => SetProperty(ref _ivPercentile, value); }
         private string _ivTrendSignal = "N/A";
-        public string IvTrendSignal { get => _ivTrendSignal; set { if (_ivTrendSignal != value) { _ivTrendSignal = value; OnPropertyChanged(); } } }
+        public string IvTrendSignal { get => _ivTrendSignal; set => SetProperty(ref _ivTrendSignal, value); }
 
-        public decimal CurrentIv { get => _currentIv; set { if (_currentIv != value) { _currentIv = value; OnPropertyChanged(); } } }
-        public decimal AvgIv { get => _avgIv; set { if (_avgIv != value) { _avgIv = value; OnPropertyChanged(); } } }
-        public string IvSignal { get => _ivSignal; set { if (_ivSignal != value) { _ivSignal = value; OnPropertyChanged(); } } }
+        public decimal CurrentIv { get => _currentIv; set => SetProperty(ref _currentIv, value); }
+        public decimal AvgIv { get => _avgIv; set => SetProperty(ref _avgIv, value); }
+        public string IvSignal { get => _ivSignal; set => SetProperty(ref _ivSignal, value); }
 
         private decimal _developingPoc;
-        public decimal DevelopingPoc { get => _developingPoc; set { if (_developingPoc != value) { _developingPoc = value; OnPropertyChanged(); } } }
+        public decimal DevelopingPoc { get => _developingPoc; set => SetProperty(ref _developingPoc, value); }
         private decimal _developingVah;
-        public decimal DevelopingVah { get => _developingVah; set { if (_developingVah != value) { _developingVah = value; OnPropertyChanged(); } } }
+        public decimal DevelopingVah { get => _developingVah; set => SetProperty(ref _developingVah, value); }
         private decimal _developingVal;
-        public decimal DevelopingVal { get => _developingVal; set { if (_developingVal != value) { _developingVal = value; OnPropertyChanged(); } } }
+        public decimal DevelopingVal { get => _developingVal; set => SetProperty(ref _developingVal, value); }
         private decimal _developingVpoc;
-        public decimal DevelopingVpoc { get => _developingVpoc; set { if (_developingVpoc != value) { _developingVpoc = value; OnPropertyChanged(); } } }
+        public decimal DevelopingVpoc { get => _developingVpoc; set => SetProperty(ref _developingVpoc, value); }
 
         private string _dailyBias = "Calculating...";
-        public string DailyBias { get => _dailyBias; set { if (_dailyBias != value) { _dailyBias = value; OnPropertyChanged(); } } }
+        public string DailyBias { get => _dailyBias; set => SetProperty(ref _dailyBias, value); }
 
         private string _marketStructure = "N/A";
-        public string MarketStructure { get => _marketStructure; set { if (_marketStructure != value) { _marketStructure = value; OnPropertyChanged(); } } }
+        public string MarketStructure { get => _marketStructure; set => SetProperty(ref _marketStructure, value); }
 
         private decimal _initialBalanceHigh;
-        public decimal InitialBalanceHigh { get => _initialBalanceHigh; set { if (_initialBalanceHigh != value) { _initialBalanceHigh = value; OnPropertyChanged(); } } }
+        public decimal InitialBalanceHigh { get => _initialBalanceHigh; set => SetProperty(ref _initialBalanceHigh, value); }
         private decimal _initialBalanceLow;
-        public decimal InitialBalanceLow { get => _initialBalanceLow; set { if (_initialBalanceLow != value) { _initialBalanceLow = value; OnPropertyChanged(); } } }
+        public decimal InitialBalanceLow { get => _initialBalanceLow; set => SetProperty(ref _initialBalanceLow, value); }
         private string _initialBalanceSignal = "N/A";
-        public string InitialBalanceSignal { get => _initialBalanceSignal; set { if (_initialBalanceSignal != value) { _initialBalanceSignal = value; OnPropertyChanged(); } } }
+        public string InitialBalanceSignal { get => _initialBalanceSignal; set => SetProperty(ref _initialBalanceSignal, value); }
 
         private string _marketProfileSignal = "N/A";
-        public string MarketProfileSignal { get => _marketProfileSignal; set { if (_marketProfileSignal != value) { _marketProfileSignal = value; OnPropertyChanged(); } } }
-        public string CandleSignal1Min { get => _candleSignal1Min; set { if (_candleSignal1Min != value) { _candleSignal1Min = value; OnPropertyChanged(); } } }
-        public string CandleSignal5Min { get => _candleSignal5Min; set { if (_candleSignal5Min != value) { _candleSignal5Min = value; OnPropertyChanged(); } } }
-        public string CustomLevelSignal { get => _customLevelSignal; set { if (_customLevelSignal != value) { _customLevelSignal = value; OnPropertyChanged(); } } }
-        public string SecurityId { get => _securityId; set { _securityId = value; OnPropertyChanged(); } }
-        public string Symbol { get => _symbol; set { _symbol = value; OnPropertyChanged(); } }
-        public decimal LTP { get => _ltp; set { if (_ltp != value) { _ltp = value; OnPropertyChanged(); } } }
-        public decimal Vwap { get => _vwap; set { if (_vwap != value) { _vwap = value; OnPropertyChanged(); } } }
-        public long CurrentVolume { get => _currentVolume; set { if (_currentVolume != value) { _currentVolume = value; OnPropertyChanged(); } } }
-        public long AvgVolume { get => _avgVolume; set { if (_avgVolume != value) { _avgVolume = value; OnPropertyChanged(); } } }
-        public string VolumeSignal { get => _volumeSignal; set { if (_volumeSignal != value) { _volumeSignal = value; OnPropertyChanged(); } } }
-        public string OiSignal { get => _oiSignal; set { if (_oiSignal != value) { _oiSignal = value; OnPropertyChanged(); } } }
-        public string InstrumentGroup { get => _instrumentGroup; set { if (_instrumentGroup != value) { _instrumentGroup = value; OnPropertyChanged(); } } }
-        public string UnderlyingGroup { get => _underlyingGroup; set { if (_underlyingGroup != value) { _underlyingGroup = value; OnPropertyChanged(); } } }
-        public string EmaSignal1Min { get => _emaSignal1Min; set { if (_emaSignal1Min != value) { _emaSignal1Min = value; OnPropertyChanged(); } } }
-        public string EmaSignal5Min { get => _emaSignal5Min; set { if (_emaSignal5Min != value) { _emaSignal5Min = value; OnPropertyChanged(); } } }
-        public string EmaSignal15Min { get => _emaSignal15Min; set { if (_emaSignal15Min != value) { _emaSignal15Min = value; OnPropertyChanged(); } } }
-        public string VwapEmaSignal1Min { get => _vwapEmaSignal1Min; set { if (_vwapEmaSignal1Min != value) { _vwapEmaSignal1Min = value; OnPropertyChanged(); } } }
-        public string VwapEmaSignal5Min { get => _vwapEmaSignal5Min; set { if (_vwapEmaSignal5Min != value) { _vwapEmaSignal5Min = value; OnPropertyChanged(); } } }
-        public string VwapEmaSignal15Min { get => _vwapEmaSignal15Min; set { if (_vwapEmaSignal15Min != value) { _vwapEmaSignal15Min = value; OnPropertyChanged(); } } }
-        public string PriceVsVwapSignal { get => _priceVsVwapSignal; set { if (_priceVsVwapSignal != value) { _priceVsVwapSignal = value; OnPropertyChanged(); } } }
-        public string PriceVsCloseSignal { get => _priceVsCloseSignal; set { if (_priceVsCloseSignal != value) { _priceVsCloseSignal = value; OnPropertyChanged(); } } }
-        public string DayRangeSignal { get => _dayRangeSignal; set { if (_dayRangeSignal != value) { _dayRangeSignal = value; OnPropertyChanged(); } } }
+        public string MarketProfileSignal { get => _marketProfileSignal; set => SetProperty(ref _marketProfileSignal, value); }
+        public string CandleSignal1Min { get => _candleSignal1Min; set => SetProperty(ref _candleSignal1Min, value); }
+        public string CandleSignal5Min { get => _candleSignal5Min; set => SetProperty(ref _candleSignal5Min, value); }
+        public string CustomLevelSignal { get => _customLevelSignal; set => SetProperty(ref _customLevelSignal, value); }
+        public string SecurityId { get => _securityId; set => SetProperty(ref _securityId, value); }
+        public string Symbol { get => _symbol; set => SetProperty(ref _symbol, value); }
+        public decimal LTP { get => _ltp; set => SetProperty(ref _ltp, value); }
+        public decimal Vwap { get => _vwap; set => SetProperty(ref _vwap, value); }
+        public long CurrentVolume { get => _currentVolume; set => SetProperty(ref _currentVolume, value); }
+        public long AvgVolume { get => _avgVolume; set => SetProperty(ref _avgVolume, value); }
+        public string VolumeSignal { get => _volumeSignal; set => SetProperty(ref _volumeSignal, value); }
+        public string OiSignal { get => _oiSignal; set => SetProperty(ref _oiSignal, value); }
+        public string InstrumentGroup { get => _instrumentGroup; set => SetProperty(ref _instrumentGroup, value); }
+        public string UnderlyingGroup { get => _underlyingGroup; set => SetProperty(ref _underlyingGroup, value); }
+        public string EmaSignal1Min { get => _emaSignal1Min; set => SetProperty(ref _emaSignal1Min, value); }
+        public string EmaSignal5Min { get => _emaSignal5Min; set => SetProperty(ref _emaSignal5Min, value); }
+        public string EmaSignal15Min { get => _emaSignal15Min; set => SetProperty(ref _emaSignal15Min, value); }
+        public string VwapEmaSignal1Min { get => _vwapEmaSignal1Min; set => SetProperty(ref _vwapEmaSignal1Min, value); }
+        public string VwapEmaSignal5Min { get => _vwapEmaSignal5Min; set => SetProperty(ref _vwapEmaSignal5Min, value); }
+        public string VwapEmaSignal15Min { get => _vwapEmaSignal15Min; set => SetProperty(ref _vwapEmaSignal15Min, value); }
+        public string PriceVsVwapSignal { get => _priceVsVwapSignal; set => SetProperty(ref _priceVsVwapSignal, value); }
+        public string PriceVsCloseSignal { get => _priceVsCloseSignal; set => SetProperty(ref _priceVsCloseSignal, value); }
+        public string DayRangeSignal { get => _dayRangeSignal; set => SetProperty(ref _dayRangeSignal, value); }
 
         private int _convictionScore;
-        public int ConvictionScore { get => _convictionScore; set { if (_convictionScore != value) { _convictionScore = value; OnPropertyChanged(); } } }
+        public int ConvictionScore { get => _convictionScore; set => SetProperty(ref _convictionScore, value); }
 
         private string _finalTradeSignal = "Analyzing...";
-        public string FinalTradeSignal { get => _finalTradeSignal; set { if (_finalTradeSignal != value) { _finalTradeSignal = value; OnPropertyChanged(); } } }
+        public string FinalTradeSignal { get => _finalTradeSignal; set => SetProperty(ref _finalTradeSignal, value); }
 
         private decimal _stopLoss;
-        public decimal StopLoss { get => _stopLoss; set { if (_stopLoss != value) { _stopLoss = value; OnPropertyChanged(); } } }
+        public decimal StopLoss { get => _stopLoss; set => SetProperty(ref _stopLoss, value); }
 
         private decimal _targetPrice;
-        public decimal TargetPrice { get => _targetPrice; set { if (_targetPrice != value) { _targetPrice = value; OnPropertyChanged(); } } }
+        public decimal TargetPrice { get => _targetPrice; set => SetProperty(ref _targetPrice, value); }
 
         private string _institutionalIntent = "N/A";
-        public string InstitutionalIntent { get => _institutionalIntent; set { if (_institutionalIntent != value) { _institutionalIntent = value; OnPropertyChanged(); } } }
+        public string InstitutionalIntent { get => _institutionalIntent; set => SetProperty(ref _institutionalIntent, value); }
 
         private string _openTypeSignal = "N/A";
         public string OpenTypeSignal { get => _openTypeSignal; set => SetProperty(ref _openTypeSignal, value); }

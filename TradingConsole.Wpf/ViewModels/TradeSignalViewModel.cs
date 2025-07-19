@@ -26,9 +26,8 @@ namespace TradingConsole.Wpf.ViewModels
 
             if (existingResult != null)
             {
-                existingResult.Symbol = newResult.Symbol;
-                existingResult.ConvictionScore = newResult.ConvictionScore;
-                existingResult.FinalTradeSignal = newResult.FinalTradeSignal;
+                // --- REFACTORED: Use the new Update method for consistency.
+                existingResult.Update(newResult);
             }
             else
             {

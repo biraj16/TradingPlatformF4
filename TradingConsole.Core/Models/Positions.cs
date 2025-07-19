@@ -1,15 +1,17 @@
+// In TradingConsole.Core/Models/Position.cs
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace TradingConsole.Core.Models
 {
-    public class Position : INotifyPropertyChanged
+    // --- REFACTORED: This class now inherits from ObservableModel to remove redundant code.
+    public class Position : ObservableModel
     {
         private bool _isSelected;
         private decimal _lastTradedPrice;
 
-        public bool IsSelected { get => _isSelected; set { if (_isSelected != value) { _isSelected = value; OnPropertyChanged(); } } }
-        // --- FIX: Initialized non-nullable string properties ---
+        public bool IsSelected { get => _isSelected; set => SetProperty(ref _isSelected, value); }
+
         public string SecurityId { get; set; } = string.Empty;
         public string Ticker { get; set; } = string.Empty;
         public string ProductType { get; set; } = string.Empty;
@@ -19,7 +21,14 @@ namespace TradingConsole.Core.Models
         public decimal SellAverage { get; set; }
         public int BuyQuantity { get; set; }
         public int SellQuantity { get; set; }
-        public decimal LastTradedPrice { get => _lastTradedPrice; set { if (_lastTradedPrice != value) { _lastTradedPrice = value; OnPropertyChanged(); OnPropertyChanged(nameof(UnrealizedPnl)); } } }
+
+        public decimal LastTradedPrice
+        {
+            get => _lastTradedPrice;
+            // --- REFACTORED: Uses the SetProperty helper from the base class.
+            set { if (SetProperty(ref _lastTradedPrice, value)) { OnPropertyChanged(nameof(UnrealizedPnl)); } }
+        }
+
         public decimal UnrealizedPnl
         {
             get
@@ -30,7 +39,7 @@ namespace TradingConsole.Core.Models
                 }
                 else if (Quantity < 0) // Short position
                 {
-                    return Math.Abs(Quantity) * (AveragePrice - LastTradedPrice);
+                    return System.Math.Abs(Quantity) * (AveragePrice - LastTradedPrice);
                 }
                 else
                 {
@@ -39,10 +48,7 @@ namespace TradingConsole.Core.Models
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        // --- REFACTORED: The PropertyChanged event and OnPropertyChanged method are now inherited
+        // from ObservableModel and have been removed from this class.
     }
 }

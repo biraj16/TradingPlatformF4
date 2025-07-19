@@ -48,10 +48,11 @@ namespace TradingConsole.Core.Models
         {
             TrendingBullDrivers = new ObservableCollection<SignalDriver>
             {
-                // --- NEW: Added high-impact market structure drivers ---
+                // --- NEW: Added high-impact candlestick pattern drivers ---
+                new SignalDriver("Bullish Pattern at Support", 4),
+
                 new SignalDriver("Acceptance above Y-VAH", 4),
                 new SignalDriver("Rejection at Y-VAL", 4),
-
                 new SignalDriver("Institutional Intent is Bullish", 3),
                 new SignalDriver("Price above VWAP", 2),
                 new SignalDriver("5m VWAP EMA confirms bullish trend", 1),
@@ -64,10 +65,11 @@ namespace TradingConsole.Core.Models
 
             TrendingBearDrivers = new ObservableCollection<SignalDriver>
             {
-                // --- NEW: Added high-impact market structure drivers ---
+                // --- NEW: Added high-impact candlestick pattern drivers ---
+                new SignalDriver("Bearish Pattern at Resistance", 4),
+
                 new SignalDriver("Acceptance below Y-VAL", 4),
                 new SignalDriver("Rejection at Y-VAH", 4),
-
                 new SignalDriver("Institutional Intent is Bearish", 3),
                 new SignalDriver("Price below VWAP", 2),
                 new SignalDriver("5m VWAP EMA confirms bearish trend", 1),
@@ -80,6 +82,9 @@ namespace TradingConsole.Core.Models
 
             RangeBoundBullishDrivers = new ObservableCollection<SignalDriver>
             {
+                 // --- NEW: Added high-impact candlestick pattern drivers ---
+                 new SignalDriver("Bullish Pattern at Support", 4),
+
                  new SignalDriver("Bullish OBV Div at range low", 3),
                  new SignalDriver("Bullish RSI Div at range low", 2),
                  new SignalDriver("Low volume suggests exhaustion (Bullish)", 1),
@@ -88,6 +93,9 @@ namespace TradingConsole.Core.Models
 
             RangeBoundBearishDrivers = new ObservableCollection<SignalDriver>
             {
+                // --- NEW: Added high-impact candlestick pattern drivers ---
+                new SignalDriver("Bearish Pattern at Resistance", 4),
+
                 new SignalDriver("Bearish OBV Div at range high", 3),
                 new SignalDriver("Bearish RSI Div at range high", 2),
                 new SignalDriver("Low volume suggests exhaustion (Bearish)", 1),

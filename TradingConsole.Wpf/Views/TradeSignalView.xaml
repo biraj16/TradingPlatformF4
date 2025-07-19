@@ -4,10 +4,10 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:TradingConsole.Wpf.Views"
-             xmlns:viewModels="clr-namespace:TradingConsole.Wpf.ViewModels"
+             xmlns:viewmodels="clr-namespace:TradingConsole.Wpf.ViewModels"
              xmlns:converters="clr-namespace:TradingConsole.Wpf.Converters"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance Type=viewModels:TradeSignalViewModel, IsDesignTimeCreatable=True}"
+             d:DataContext="{d:DesignInstance Type=viewmodels:TradeSignalViewModel, IsDesignTimeCreatable=True}"
              d:DesignHeight="450" d:DesignWidth="800" Background="#FF1E1E1E">
 
     <UserControl.Resources>

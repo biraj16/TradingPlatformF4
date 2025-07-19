@@ -14,7 +14,7 @@ namespace TradingConsole.Wpf.Views
             InitializeComponent();
         }
 
-        // --- NEW: Event handler to toggle the IsExpanded property on the data context of the clicked row ---
+        // --- Event handler to toggle the IsExpanded property on the data context of the clicked row ---
         private void DataGridRow_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (sender is DataGridRow row && row.DataContext is AnalysisResult result)
@@ -24,7 +24,7 @@ namespace TradingConsole.Wpf.Views
         }
     }
 
-    // --- NEW: A simple converter to hide the driver sections if the list is empty ---
+    // --- A simple converter to hide the driver sections if the list is empty ---
     public class CountToVisibilityConverter : System.Windows.Data.IValueConverter
     {
         public object Convert(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)

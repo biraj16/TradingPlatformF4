@@ -1032,10 +1032,12 @@ namespace TradingConsole.Wpf.Services
 
             var paSignals = CalculatePriceActionSignals(instrument, dayVwap);
             string customLevelSignal = CalculateCustomLevelSignal(instrument);
+
+            // --- MODIFIED: Pass the analysis result to the pattern recognizer for context ---
             string candleSignal1Min = "N/A";
-            if (oneMinCandles != null) candleSignal1Min = RecognizeCandlestickPattern(oneMinCandles);
+            if (oneMinCandles != null) candleSignal1Min = RecognizeCandlestickPattern(oneMinCandles, result);
             string candleSignal5Min = "N/A";
-            if (fiveMinCandles != null) candleSignal5Min = RecognizeCandlestickPattern(fiveMinCandles);
+            if (fiveMinCandles != null) candleSignal5Min = RecognizeCandlestickPattern(fiveMinCandles, result);
 
             if (_marketProfiles.TryGetValue(instrument.SecurityId, out var profile))
             {
@@ -1122,14 +1124,30 @@ namespace TradingConsole.Wpf.Services
 
         private IntradayContext DetermineIntradayContext(AnalysisResult result)
         {
-            bool isTrending = result.EmaSignal15Min.Contains("Cross") && result.EmaSignal5Min == result.EmaSignal15Min;
-            bool isBreakout = result.InitialBalanceSignal.Contains("Breakout") || result.InitialBalanceSignal.Contains("Extension");
-            bool isVolatile = result.AtrSignal5Min == "Vol Expanding" || result.AtrSignal1Min == "Vol Expanding";
+            bool isTrendingOnEma = result.EmaSignal15Min.Contains("Cross") && result.EmaSignal5Min == result.EmaSignal15Min;
+            bool isBreakoutOnIb = result.InitialBalanceSignal.Contains("Extension");
+            bool isVolatileOnAtr = result.AtrSignal5Min == "Vol Expanding" || result.AtrSignal1Min == "Vol Expanding";
+            bool isInsideIb = result.InitialBalanceSignal == "Inside IB";
 
-            if (isBreakout && isVolatile) return IntradayContext.Breakout;
-            if (isTrending && !isVolatile) return IntradayContext.Trending;
-            if (isVolatile && !isTrending) return IntradayContext.Volatile;
-            if (!isTrending && !isVolatile && !isBreakout) return IntradayContext.RangeBound;
+            if (isBreakoutOnIb)
+            {
+                return isVolatileOnAtr ? IntradayContext.Breakout : IntradayContext.Trending;
+            }
+
+            if (isVolatileOnAtr)
+            {
+                return IntradayContext.Volatile;
+            }
+
+            if (isTrendingOnEma && !isInsideIb)
+            {
+                return IntradayContext.Trending;
+            }
+
+            if (isInsideIb && !isTrendingOnEma && !isVolatileOnAtr)
+            {
+                return IntradayContext.RangeBound;
+            }
 
             return IntradayContext.Indeterminate;
         }
@@ -1198,7 +1216,7 @@ namespace TradingConsole.Wpf.Services
                     string driverText = $"{driver.Name} (+{currentWeight})";
 
                     bool isAtSupport = r.MarketProfileSignal.Contains("dVAL") || r.MarketProfileSignal.Contains("Y-VAL") || r.VwapBandSignal == "At Lower Band";
-                    if (isAtSupport && (driver.Name.Contains("Div") || driver.Name.Contains("Exhaustion")))
+                    if (isAtSupport && (driver.Name.Contains("Div") || driver.Name.Contains("Exhaustion") || driver.Name.Contains("Pattern")))
                     {
                         currentWeight += confluenceBonus;
                         driverText = $"{driver.Name} (+{driver.Weight} +{confluenceBonus} Conf.)";
@@ -1217,7 +1235,7 @@ namespace TradingConsole.Wpf.Services
                     string driverText = $"{driver.Name} (-{currentWeight})";
 
                     bool isAtResistance = r.MarketProfileSignal.Contains("dVAH") || r.MarketProfileSignal.Contains("Y-VAH") || r.VwapBandSignal == "At Upper Band";
-                    if (isAtResistance && (driver.Name.Contains("Div") || driver.Name.Contains("Exhaustion")))
+                    if (isAtResistance && (driver.Name.Contains("Div") || driver.Name.Contains("Exhaustion") || driver.Name.Contains("Pattern")))
                     {
                         currentWeight += confluenceBonus;
                         driverText = $"{driver.Name} (-{driver.Weight} +{confluenceBonus} Conf.)";
@@ -1231,12 +1249,18 @@ namespace TradingConsole.Wpf.Services
             return (triggeredBullDrivers, triggeredBearDrivers, score);
         }
 
-        // --- MODIFIED: Added cases for the new Acceptance/Rejection drivers ---
+        // --- MODIFIED: Added cases for the new contextual candlestick pattern drivers ---
         private bool CheckDriverCondition(AnalysisResult r, string driverName)
         {
             // This switch statement evaluates the condition for each driver name.
             switch (driverName)
             {
+                // --- NEW: Contextual Candlestick Drivers ---
+                case "Bullish Pattern at Support":
+                    return r.CandleSignal5Min.Contains("Bullish") && (r.DayRangeSignal == "Near Low" || r.VwapBandSignal == "At Lower Band" || r.MarketProfileSignal.Contains("VAL"));
+                case "Bearish Pattern at Resistance":
+                    return r.CandleSignal5Min.Contains("Bearish") && (r.DayRangeSignal == "Near High" || r.VwapBandSignal == "At Upper Band" || r.MarketProfileSignal.Contains("VAH"));
+
                 // --- NEW: Market Structure Drivers ---
                 case "Acceptance above Y-VAH": return r.MarketProfileSignal == "Acceptance > Y-VAH";
                 case "Acceptance below Y-VAL": return r.MarketProfileSignal == "Acceptance < Y-VAL";
@@ -1847,68 +1871,62 @@ namespace TradingConsole.Wpf.Services
             }
         }
 
-        private string RecognizeCandlestickPattern(List<Candle> candles)
+        // --- MODIFIED: Complete refactor of candlestick logic for flexibility and context ---
+        private string RecognizeCandlestickPattern(List<Candle> candles, AnalysisResult analysisResult)
         {
-            if (candles.Count < 1) return "N/A";
+            if (candles.Count < 3) return "N/A";
 
-            string volInfo = candles.Count > 1 ? GetVolumeConfirmation(candles.Last(), candles[candles.Count - 2]) : "";
+            var c1 = candles.Last();
+            var c2 = candles[candles.Count - 2];
+            var c3 = candles[candles.Count - 3];
 
-            if (candles.Count >= 3)
+            string volInfo = GetVolumeConfirmation(c1, c2);
+            string pattern = "N/A";
+
+            // --- Logic with more flexible parameters ---
+            decimal body1 = Math.Abs(c1.Open - c1.Close);
+            decimal range1 = c1.High - c1.Low;
+            decimal upperShadow1 = c1.High - Math.Max(c1.Open, c1.Close);
+            decimal lowerShadow1 = Math.Min(c1.Open, c1.Close) - c1.Low;
+
+            // Single Candle Patterns
+            if (range1 > 0)
             {
-                var c1 = candles.Last();
-                var c2 = candles[candles.Count - 2];
-                var c3 = candles[candles.Count - 3];
-
-                bool isMorningStar = c3.Close < c3.Open && Math.Max(c2.Open, c2.Close) < c3.Close && c1.Close > c1.Open && c1.Close > (c3.Open + c3.Close) / 2;
-                if (isMorningStar) return $"Bullish Morning Star{volInfo}";
-
-                bool isEveningStar = c3.Close > c3.Open && Math.Min(c2.Open, c2.Close) > c3.Close && c1.Close < c1.Open && c1.Close < (c3.Open + c3.Close) / 2;
-                if (isEveningStar) return $"Bearish Evening Star{volInfo}";
-
-                bool areThreeWhiteSoldiers = c3.Close > c3.Open && c2.Close > c2.Open && c1.Close > c1.Open && c2.Open > c3.Open && c2.Close > c3.Close && c1.Open > c2.Open && c1.Close > c2.Close;
-                if (areThreeWhiteSoldiers) return "Bullish Three Soldiers";
-
-                bool areThreeBlackCrows = c3.Close < c3.Open && c2.Close < c2.Open && c1.Close < c1.Open && c2.Open < c3.Open && c2.Close < c3.Close && c1.Open < c2.Open && c1.Close < c2.Close;
-                if (areThreeBlackCrows) return "Bearish Three Crows";
+                if (body1 / range1 < 0.15m) pattern = "Neutral Doji"; // More flexible Doji
+                if (lowerShadow1 > body1 * 1.8m && upperShadow1 < body1 * 0.8m) pattern = c1.Close > c1.Open ? "Bullish Hammer" : "Bearish Hanging Man";
+                if (upperShadow1 > body1 * 1.8m && lowerShadow1 < body1 * 0.8m) pattern = c1.Close > c1.Open ? "Bullish Inv Hammer" : "Bearish Shooting Star";
+                if (body1 / range1 > 0.9m) pattern = c1.Close > c1.Open ? "Bullish Marubozu" : "Bearish Marubozu";
             }
 
-            if (candles.Count >= 2)
+            // Two Candle Patterns
+            if (c1.Close > c2.Open && c1.Open < c2.Close && c1.Close > c1.Open && c2.Close < c2.Open) pattern = "Bullish Engulfing";
+            if (c1.Open > c2.Close && c1.Close < c2.Open && c1.Close < c1.Open && c2.Close > c2.Open) pattern = "Bearish Engulfing";
+
+            // Three Candle Patterns
+            bool isMorningStar = c3.Close < c3.Open && Math.Max(c2.Open, c2.Close) < c3.Close && c1.Close > c1.Open && c1.Close > (c3.Open + c3.Close) / 2;
+            if (isMorningStar) pattern = "Bullish Morning Star";
+
+            bool isEveningStar = c3.Close > c3.Open && Math.Min(c2.Open, c2.Close) > c3.Close && c1.Close < c1.Open && c1.Close < (c3.Open + c3.Close) / 2;
+            if (isEveningStar) pattern = "Bearish Evening Star";
+
+            if (pattern == "N/A") return "N/A";
+
+            // --- NEW: Contextual Analysis ---
+            string context = "";
+            if (pattern.Contains("Bullish"))
             {
-                var c1 = candles.Last();
-                var c2 = candles[candles.Count - 2];
-
-                if (c1.Close > c1.Open && c2.Close < c2.Open && c1.Close > c2.Open && c1.Open < c2.Close) return $"Bullish Engulfing{volInfo}";
-                if (c1.Close < c1.Open && c2.Close > c2.Open && c1.Open > c2.Close && c1.Close < c2.Open) return $"Bearish Engulfing{volInfo}";
-                if (c2.Close < c2.Open && c1.Close > c1.Open && Math.Abs(c1.Low - c2.Low) < (c1.High - c1.Low) * 0.05m) return "Bullish Tweezer";
-                if (c2.Close > c2.Open && c1.Close < c1.Open && Math.Abs(c1.High - c2.High) < (c1.High - c1.Low) * 0.05m) return "Bearish Tweezer";
-
-                decimal c1Body = Math.Abs(c1.Close - c1.Open);
-                decimal c2Body = Math.Abs(c2.Close - c2.Open);
-                if (c2Body > c1Body * 3 && Math.Max(c1.Close, c1.Open) < Math.Max(c2.Close, c2.Open) && Math.Min(c1.Close, c1.Open) > Math.Min(c2.Close, c2.Open))
-                {
-                    if (c1Body / (c1.High - c1.Low + 0.0001m) < 0.1m) return "Neutral Harami Cross";
-                    return c2.Close > c2.Open ? "Bearish Harami" : "Bullish Harami";
-                }
+                if (analysisResult.DayRangeSignal == "Near Low") context = " at Day's Low";
+                else if (analysisResult.VwapBandSignal == "At Lower Band") context = " at VWAP Band";
+                else if (analysisResult.MarketProfileSignal.Contains("VAL")) context = " at Value Area Low";
+            }
+            else if (pattern.Contains("Bearish"))
+            {
+                if (analysisResult.DayRangeSignal == "Near High") context = " at Day's High";
+                else if (analysisResult.VwapBandSignal == "At Upper Band") context = " at VWAP Band";
+                else if (analysisResult.MarketProfileSignal.Contains("VAH")) context = " at Value Area High";
             }
 
-            var current = candles.Last();
-            decimal body = Math.Abs(current.Open - current.Close);
-            decimal range = current.High - current.Low;
-            if (range == 0) return "Neutral";
-
-            decimal upperShadow = current.High - Math.Max(current.Open, current.Close);
-            decimal lowerShadow = Math.Min(current.Open, current.Close) - current.Low;
-
-            if (body / range < 0.1m) return "Neutral Doji";
-            if (lowerShadow > body * 2 && upperShadow < body) return current.Close > current.Open ? "Bullish Hammer" : "Bearish Hanging Man";
-            if (upperShadow > body * 2 && lowerShadow < body) return current.Close > current.Open ? "Bullish Inv Hammer" : "Bearish Shooting Star";
-            if (body / range > 0.95m)
-            {
-                if (current.Close > current.Open) return $"Bullish Marubozu{volInfo}";
-                if (current.Close < current.Open) return $"Bearish Marubozu{volInfo}";
-            }
-
-            return "N/A";
+            return $"{pattern}{context}{volInfo}";
         }
 
 

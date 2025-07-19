@@ -285,7 +285,6 @@ namespace TradingConsole.Wpf.Services
             return "Neutral";
         }
 
-        // --- MODIFIED: Improvement #1 - Enhanced Institutional Intent ---
         private string RunTier1InstitutionalIntentAnalysis(DashboardInstrument spotIndex)
         {
             if (!_relativeStrengthStates.ContainsKey(spotIndex.SecurityId)) return "Analyzing...";
@@ -307,7 +306,6 @@ namespace TradingConsole.Wpf.Services
 
             string basisTrend = CalculateTrend(state.BasisDeltaHistory, 30);
 
-            // --- NEW: Confirmation Logic ---
             string confirmation = "";
             var futureCandles = GetCandles(future.SecurityId, TimeSpan.FromMinutes(1));
             if (futureCandles != null && futureCandles.Count > 1)
@@ -1164,7 +1162,6 @@ namespace TradingConsole.Wpf.Services
             }
         }
 
-        // --- MODIFIED: Improvement #2 - Confluence Weighting ---
         private (List<string> BullishDrivers, List<string> BearishDrivers, int Score) CalculateConvictionScore(AnalysisResult r, IntradayContext context)
         {
             var bullDrivers = new List<SignalDriver>();
@@ -1191,7 +1188,6 @@ namespace TradingConsole.Wpf.Services
             var triggeredBullDrivers = new List<string>();
             var triggeredBearDrivers = new List<string>();
 
-            // --- NEW: Define Confluence Bonus ---
             const int confluenceBonus = 2;
 
             foreach (var driver in bullDrivers)
@@ -1201,7 +1197,6 @@ namespace TradingConsole.Wpf.Services
                     int currentWeight = driver.Weight;
                     string driverText = $"{driver.Name} (+{currentWeight})";
 
-                    // --- NEW: Check for Bullish Confluence ---
                     bool isAtSupport = r.MarketProfileSignal.Contains("dVAL") || r.MarketProfileSignal.Contains("Y-VAL") || r.VwapBandSignal == "At Lower Band";
                     if (isAtSupport && (driver.Name.Contains("Div") || driver.Name.Contains("Exhaustion")))
                     {
@@ -1221,7 +1216,6 @@ namespace TradingConsole.Wpf.Services
                     int currentWeight = driver.Weight;
                     string driverText = $"{driver.Name} (-{currentWeight})";
 
-                    // --- NEW: Check for Bearish Confluence ---
                     bool isAtResistance = r.MarketProfileSignal.Contains("dVAH") || r.MarketProfileSignal.Contains("Y-VAH") || r.VwapBandSignal == "At Upper Band";
                     if (isAtResistance && (driver.Name.Contains("Div") || driver.Name.Contains("Exhaustion")))
                     {
@@ -1237,11 +1231,18 @@ namespace TradingConsole.Wpf.Services
             return (triggeredBullDrivers, triggeredBearDrivers, score);
         }
 
+        // --- MODIFIED: Added cases for the new Acceptance/Rejection drivers ---
         private bool CheckDriverCondition(AnalysisResult r, string driverName)
         {
             // This switch statement evaluates the condition for each driver name.
             switch (driverName)
             {
+                // --- NEW: Market Structure Drivers ---
+                case "Acceptance above Y-VAH": return r.MarketProfileSignal == "Acceptance > Y-VAH";
+                case "Acceptance below Y-VAL": return r.MarketProfileSignal == "Acceptance < Y-VAL";
+                case "Rejection at Y-VAH": return r.MarketProfileSignal == "Rejection at Y-VAH";
+                case "Rejection at Y-VAL": return r.MarketProfileSignal == "Rejection at Y-VAL";
+
                 // Trending Bull Drivers
                 case "Institutional Intent is Bullish": return r.InstitutionalIntent.Contains("Bullish");
                 case "Price above VWAP": return r.PriceVsVwapSignal == "Above VWAP";

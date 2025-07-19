@@ -48,9 +48,13 @@ namespace TradingConsole.Core.Models
         {
             TrendingBullDrivers = new ObservableCollection<SignalDriver>
             {
+                // --- NEW: Added high-impact market structure drivers ---
+                new SignalDriver("Acceptance above Y-VAH", 4),
+                new SignalDriver("Rejection at Y-VAL", 4),
+
                 new SignalDriver("Institutional Intent is Bullish", 3),
                 new SignalDriver("Price above VWAP", 2),
-                new SignalDriver("5m VWAP EMA confirms bullish trend", 1), // MODIFIED: Unique Name
+                new SignalDriver("5m VWAP EMA confirms bullish trend", 1),
                 new SignalDriver("OI confirms new longs", 2),
                 new SignalDriver("IB breakout is extending", 2),
                 new SignalDriver("IV contracting supports calm uptrend", 1),
@@ -60,9 +64,13 @@ namespace TradingConsole.Core.Models
 
             TrendingBearDrivers = new ObservableCollection<SignalDriver>
             {
+                // --- NEW: Added high-impact market structure drivers ---
+                new SignalDriver("Acceptance below Y-VAL", 4),
+                new SignalDriver("Rejection at Y-VAH", 4),
+
                 new SignalDriver("Institutional Intent is Bearish", 3),
                 new SignalDriver("Price below VWAP", 2),
-                new SignalDriver("5m VWAP EMA confirms bearish trend", 1), // MODIFIED: Unique Name
+                new SignalDriver("5m VWAP EMA confirms bearish trend", 1),
                 new SignalDriver("OI confirms new shorts", 2),
                 new SignalDriver("IB breakdown is extending", 2),
                 new SignalDriver("IV spiking confirms fear", 2),

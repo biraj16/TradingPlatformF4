@@ -8,15 +8,16 @@
              xmlns:converters="clr-namespace:TradingConsole.Wpf.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=viewmodels:TradeSignalViewModel, IsDesignTimeCreatable=True}"
-             d:DesignHeight="450" d:DesignWidth="800" Background="#FF1E1E1E">
+             d:DesignHeight="450" d:DesignWidth="900" Background="#FF1E1E1E">
 
     <UserControl.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:ValueToSignConverter x:Key="ValueToSignConverter"/>
         <local:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
 
+        <!-- Style for the Conviction ProgressBar -->
         <Style x:Key="ConvictionBarStyle" TargetType="ProgressBar">
-            <Setter Property="Height" Value="10"/>
+            <Setter Property="Height" Value="8"/>
             <Setter Property="Minimum" Value="-10"/>
             <Setter Property="Maximum" Value="10"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -24,32 +25,29 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ProgressBar">
                         <Grid>
-                            <Rectangle Fill="#FF444444" RadiusX="5" RadiusY="5"/>
+                            <Rectangle Fill="#FF444444" RadiusX="4" RadiusY="4"/>
                             <Grid ClipToBounds="True">
                                 <Rectangle x:Name="PART_Track" Fill="Transparent" />
-                                <Rectangle x:Name="PART_Indicator" HorizontalAlignment="Left" RadiusX="5" RadiusY="5"/>
+                                <Rectangle x:Name="PART_Indicator" HorizontalAlignment="Left" RadiusX="4" RadiusY="4"/>
                             </Grid>
-                            <Border BorderBrush="#888" BorderThickness="1" CornerRadius="5"/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-        </Style>
-
-        <Style x:Key="ConvictionBarConditionalStyle" TargetType="ProgressBar" BasedOn="{StaticResource ConvictionBarStyle}">
             <Style.Triggers>
-                <DataTrigger Binding="{Binding ConvictionScore}" Value="0">
-                    <Setter Property="Foreground" Value="Gray"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Path=ConvictionScore, Converter={StaticResource ValueToSignConverter}}" Value="Positive">
+                <DataTrigger Binding="{Binding ConvictionScore, Converter={StaticResource ValueToSignConverter}}" Value="Positive">
                     <Setter Property="Foreground" Value="#FF4CAF50"/>
                 </DataTrigger>
-                <DataTrigger Binding="{Binding Path=ConvictionScore, Converter={StaticResource ValueToSignConverter}}" Value="Negative">
+                <DataTrigger Binding="{Binding ConvictionScore, Converter={StaticResource ValueToSignConverter}}" Value="Negative">
                     <Setter Property="Foreground" Value="#FFF44336"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding ConvictionScore}" Value="0">
+                    <Setter Property="Foreground" Value="Gray"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
 
+        <!-- Style for the expand/collapse toggle button glyph -->
         <Style x:Key="ExpanderToggleStyle" TargetType="ToggleButton">
             <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
             <Setter Property="FontSize" Value="12"/>
@@ -71,6 +69,14 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Style for Icon TextBlocks -->
+        <Style x:Key="IconTextBlockStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
 
     </UserControl.Resources>
@@ -118,6 +124,7 @@
             </DataGrid.ColumnHeaderStyle>
 
             <DataGrid.Columns>
+                <!-- Expander Column -->
                 <DataGridTemplateColumn>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -127,6 +134,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
+                <!-- Symbol Column -->
                 <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="*">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -137,6 +145,7 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
+                <!-- Overall Signal Column -->
                 <DataGridTextColumn Header="Overall Signal" Binding="{Binding FinalTradeSignal}" Width="1.5*">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -149,71 +158,173 @@
                                 <DataTrigger Binding="{Binding FinalTradeSignal, Converter={StaticResource ValueToSignConverter}, ConverterParameter=ContainsBearish}" Value="True">
                                     <Setter Property="Foreground" Value="#FFF44336"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding FinalTradeSignal, Converter={StaticResource ValueToSignConverter}, ConverterParameter=ContainsNeutral}" Value="True">
-                                    <Setter Property="Foreground" Value="Gray"/>
-                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
+                <!-- Enhanced Conviction Column with Bar -->
+                <DataGridTemplateColumn Header="Conviction" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <ProgressBar Value="{Binding ConvictionScore}" Style="{StaticResource ConvictionBarStyle}" Width="80"/>
+                                <TextBlock Text="{Binding ConvictionScore}" FontWeight="Bold" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
                 <DataGridTextColumn Header="Bias" Binding="{Binding IndexSignal.Bias}" Width="*"/>
-                <DataGridTextColumn Header="Trend" Binding="{Binding IndexSignal.TrendDirection}" Width="*"/>
-                <DataGridTextColumn Header="Momentum" Binding="{Binding IndexSignal.Momentum}" Width="*"/>
-                <DataGridTextColumn Header="Volatility" Binding="{Binding IndexSignal.Volatility}" Width="*"/>
+
+                <!-- *** FIXED: Trend Column with Icon and Text *** -->
+                <DataGridTemplateColumn Header="Trend" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ContentControl>
+                                <ContentControl.Style>
+                                    <Style TargetType="ContentControl">
+                                        <Setter Property="ContentTemplate">
+                                            <Setter.Value>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="&#xE7A7;" Style="{StaticResource IconTextBlockStyle}" Foreground="Gray"/>
+                                                        <TextBlock Text="{Binding IndexSignal.TrendDirection}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IndexSignal.TrendDirection}" Value="Uptrend">
+                                                <Setter Property="ContentTemplate">
+                                                    <Setter.Value>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <TextBlock Text="&#xE70E;" Style="{StaticResource IconTextBlockStyle}" Foreground="#FF4CAF50"/>
+                                                                <TextBlock Text="{Binding IndexSignal.TrendDirection}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IndexSignal.TrendDirection}" Value="Downtrend">
+                                                <Setter Property="ContentTemplate">
+                                                    <Setter.Value>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <TextBlock Text="&#xE70D;" Style="{StaticResource IconTextBlockStyle}" Foreground="#FFF44336"/>
+                                                                <TextBlock Text="{Binding IndexSignal.TrendDirection}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ContentControl.Style>
+                            </ContentControl>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- *** FIXED: Volatility Column with Icon and Text *** -->
+                <DataGridTemplateColumn Header="Volatility" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ContentControl>
+                                <ContentControl.Style>
+                                    <Style TargetType="ContentControl">
+                                        <Setter Property="ContentTemplate">
+                                            <Setter.Value>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="&#xE7A7;" Style="{StaticResource IconTextBlockStyle}" Foreground="Gray"/>
+                                                        <TextBlock Text="{Binding IndexSignal.Volatility}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IndexSignal.Volatility}" Value="Expanding">
+                                                <Setter Property="ContentTemplate">
+                                                    <Setter.Value>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <TextBlock Text="&#xE781;" Style="{StaticResource IconTextBlockStyle}" Foreground="Orange"/>
+                                                                <TextBlock Text="{Binding IndexSignal.Volatility}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IndexSignal.Volatility}" Value="Contracting">
+                                                <Setter Property="ContentTemplate">
+                                                    <Setter.Value>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <TextBlock Text="&#xE748;" Style="{StaticResource IconTextBlockStyle}" Foreground="LightBlue"/>
+                                                                <TextBlock Text="{Binding IndexSignal.Volatility}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ContentControl.Style>
+                            </ContentControl>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
 
             </DataGrid.Columns>
 
+            <!-- Enhanced Row Details Template -->
             <DataGrid.RowDetailsTemplate>
                 <DataTemplate>
                     <Border Background="#FF333337" Padding="20" Margin="12,0,12,10" CornerRadius="5">
                         <StackPanel>
-                            <TextBlock Text="Comprehensive Index Thesis" FontWeight="Bold" FontSize="16" Foreground="White" Margin="0,0,0,10"/>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Conviction Score:" FontWeight="SemiBold" Foreground="LightGray" Margin="5" VerticalAlignment="Center"/>
-                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <ProgressBar Value="{Binding ConvictionScore}" Style="{StaticResource ConvictionBarConditionalStyle}" Width="150"/>
-                                    <TextBlock Text="{Binding ConvictionScore}" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                                </StackPanel>
-
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Narrative:" FontWeight="SemiBold" Foreground="LightGray" Margin="5" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding MarketNarrative}" TextWrapping="Wrap" Foreground="LightGray" Margin="5" VerticalAlignment="Center"/>
-                            </Grid>
+                            <TextBlock Text="Comprehensive Index Thesis" FontWeight="Bold" FontSize="16" Foreground="White" Margin="0,0,0,15"/>
+                            <Border Background="#FF2D2D30" CornerRadius="3" Padding="10">
+                                <TextBlock Text="{Binding MarketNarrative}" TextWrapping="Wrap" Foreground="LightGray" FontStyle="Italic"/>
+                            </Border>
 
                             <Grid Margin="0,15,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="20"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Margin="5,0">
-                                    <TextBlock Text="Bullish Drivers" FontWeight="Bold" Foreground="#4CAF50" Margin="0,0,0,5"/>
-                                    <ItemsControl ItemsSource="{Binding BullishDrivers}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding}" TextWrapping="Wrap" Foreground="LightGray" Margin="5,2"/>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="5,0">
-                                    <TextBlock Text="Bearish Drivers" FontWeight="Bold" Foreground="#F44336" Margin="0,0,0,5"/>
-                                    <ItemsControl ItemsSource="{Binding BearishDrivers}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding}" TextWrapping="Wrap" Foreground="LightGray" Margin="5,2"/>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </StackPanel>
+
+                                <!-- Bullish Drivers -->
+                                <Border Grid.Column="0" Background="#FF2D2D30" CornerRadius="3" Padding="10"
+                                        Visibility="{Binding BullishDrivers.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                    <StackPanel>
+                                        <TextBlock Text="Bullish Drivers" FontWeight="Bold" Foreground="#4CAF50" Margin="0,0,0,5"/>
+                                        <ItemsControl ItemsSource="{Binding BullishDrivers}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding}" TextWrapping="Wrap" Foreground="LightGray" Margin="5,2"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Bearish Drivers -->
+                                <Border Grid.Column="2" Background="#FF2D2D30" CornerRadius="3" Padding="10"
+                                        Visibility="{Binding BearishDrivers.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                    <StackPanel>
+                                        <TextBlock Text="Bearish Drivers" FontWeight="Bold" Foreground="#F44336" Margin="0,0,0,5"/>
+                                        <ItemsControl ItemsSource="{Binding BearishDrivers}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding}" TextWrapping="Wrap" Foreground="LightGray" Margin="5,2"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
                             </Grid>
                         </StackPanel>
                     </Border>

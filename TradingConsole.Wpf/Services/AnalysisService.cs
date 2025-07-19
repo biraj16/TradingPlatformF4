@@ -285,6 +285,7 @@ namespace TradingConsole.Wpf.Services
             return "Neutral";
         }
 
+        // --- MODIFIED: Improvement #1 - Enhanced Institutional Intent ---
         private string RunTier1InstitutionalIntentAnalysis(DashboardInstrument spotIndex)
         {
             if (!_relativeStrengthStates.ContainsKey(spotIndex.SecurityId)) return "Analyzing...";
@@ -306,8 +307,32 @@ namespace TradingConsole.Wpf.Services
 
             string basisTrend = CalculateTrend(state.BasisDeltaHistory, 30);
 
-            if (basisTrend == "Trending Up") return "Bullish (Futures Strengthening)";
-            if (basisTrend == "Trending Down") return "Bearish (Futures Weakening)";
+            // --- NEW: Confirmation Logic ---
+            string confirmation = "";
+            var futureCandles = GetCandles(future.SecurityId, TimeSpan.FromMinutes(1));
+            if (futureCandles != null && futureCandles.Count > 1)
+            {
+                var (volSignal, _, _) = CalculateVolumeSignalForTimeframe(futureCandles);
+                var oiSignal = CalculateOiSignal(futureCandles);
+
+                if (basisTrend == "Trending Up")
+                {
+                    if (volSignal == "Volume Burst" && oiSignal == "Long Buildup")
+                        confirmation = " (Confirmed by Vol & OI)";
+                    else if (volSignal == "Volume Burst")
+                        confirmation = " (Confirmed by Vol)";
+                }
+                else if (basisTrend == "Trending Down")
+                {
+                    if (volSignal == "Volume Burst" && oiSignal == "Short Buildup")
+                        confirmation = " (Confirmed by Vol & OI)";
+                    else if (volSignal == "Volume Burst")
+                        confirmation = " (Confirmed by Vol)";
+                }
+            }
+
+            if (basisTrend == "Trending Up") return $"Bullish (Futures Strengthening){confirmation}";
+            if (basisTrend == "Trending Down") return $"Bearish (Futures Weakening){confirmation}";
 
             return "Neutral";
         }
@@ -1139,6 +1164,7 @@ namespace TradingConsole.Wpf.Services
             }
         }
 
+        // --- MODIFIED: Improvement #2 - Confluence Weighting ---
         private (List<string> BullishDrivers, List<string> BearishDrivers, int Score) CalculateConvictionScore(AnalysisResult r, IntradayContext context)
         {
             var bullDrivers = new List<SignalDriver>();
@@ -1165,12 +1191,26 @@ namespace TradingConsole.Wpf.Services
             var triggeredBullDrivers = new List<string>();
             var triggeredBearDrivers = new List<string>();
 
+            // --- NEW: Define Confluence Bonus ---
+            const int confluenceBonus = 2;
+
             foreach (var driver in bullDrivers)
             {
                 if (CheckDriverCondition(r, driver.Name))
                 {
-                    score += driver.Weight;
-                    triggeredBullDrivers.Add($"{driver.Name} (+{driver.Weight})");
+                    int currentWeight = driver.Weight;
+                    string driverText = $"{driver.Name} (+{currentWeight})";
+
+                    // --- NEW: Check for Bullish Confluence ---
+                    bool isAtSupport = r.MarketProfileSignal.Contains("dVAL") || r.MarketProfileSignal.Contains("Y-VAL") || r.VwapBandSignal == "At Lower Band";
+                    if (isAtSupport && (driver.Name.Contains("Div") || driver.Name.Contains("Exhaustion")))
+                    {
+                        currentWeight += confluenceBonus;
+                        driverText = $"{driver.Name} (+{driver.Weight} +{confluenceBonus} Conf.)";
+                    }
+
+                    score += currentWeight;
+                    triggeredBullDrivers.Add(driverText);
                 }
             }
 
@@ -1178,8 +1218,19 @@ namespace TradingConsole.Wpf.Services
             {
                 if (CheckDriverCondition(r, driver.Name))
                 {
-                    score -= driver.Weight;
-                    triggeredBearDrivers.Add($"{driver.Name} (-{driver.Weight})");
+                    int currentWeight = driver.Weight;
+                    string driverText = $"{driver.Name} (-{currentWeight})";
+
+                    // --- NEW: Check for Bearish Confluence ---
+                    bool isAtResistance = r.MarketProfileSignal.Contains("dVAH") || r.MarketProfileSignal.Contains("Y-VAH") || r.VwapBandSignal == "At Upper Band";
+                    if (isAtResistance && (driver.Name.Contains("Div") || driver.Name.Contains("Exhaustion")))
+                    {
+                        currentWeight += confluenceBonus;
+                        driverText = $"{driver.Name} (-{driver.Weight} +{confluenceBonus} Conf.)";
+                    }
+
+                    score -= currentWeight;
+                    triggeredBearDrivers.Add(driverText);
                 }
             }
 

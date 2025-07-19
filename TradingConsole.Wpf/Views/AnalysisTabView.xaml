@@ -40,12 +40,12 @@
                   Margin="10"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
-                  CanUserReorderColumns="False"
+                  CanUserReorderColumns="True"
                   CanUserResizeColumns="True"
                   CanUserResizeRows="False"
                   CanUserSortColumns="True"
                   FrozenColumnCount="1">
-            <!-- THIS IS THE CORRECTED PROPERTY -->
+            <!-- THIS IS THE CORRECTED PROPERTY TO FREEZE THE FIRST COLUMN -->
             <DataGrid.GroupStyle>
                 <GroupStyle>
                     <GroupStyle.ContainerStyle>
@@ -192,6 +192,10 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
+
+                <!-- EMA Columns -->
+                <DataGridTextColumn Header="5m EMA" Binding="{Binding EmaSignal5Min}" Width="110"/>
+                <DataGridTextColumn Header="15m EMA" Binding="{Binding EmaSignal15Min}" Width="110"/>
 
                 <!-- Market Profile Columns -->
                 <DataGridTextColumn Header="IB High" Binding="{Binding InitialBalanceHigh, StringFormat={}{0:N2}}" Width="100"/>
